@@ -1,76 +1,120 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, Calendar, MessageSquare, Edit, Trash2, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 
+interface UserProfile {
+  full_name: string;
+  email: string;
+  whatsapp?: string;
+  avatar_url?: string;
+  created_at: string;
+}
+
+interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  vendor: {
+    id: string;
+    business_name: string;
+    category: string;
+  };
+}
+
 const UserDashboard = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  
-  // Mock user data
-  const user = {
-    name: "John Doe",
-    email: "john@email.com",
-    joinDate: "2024-01-15",
-    totalReviews: 23,
-    averageRating: 3.8
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    try {
+      // Fetch user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      } else {
+        setProfile(profileData);
+      }
+
+      // Fetch user reviews with vendor information
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from('reviews')
+        .select(`
+          id,
+          rating,
+          comment,
+          created_at,
+          vendors (
+            id,
+            business_name,
+            category
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (reviewsError) {
+        console.error('Error fetching reviews:', reviewsError);
+      } else {
+        setReviews(reviewsData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Mock user reviews
-  const userReviews = [
-    {
-      id: "1",
-      vendorName: "Mama's Kitchen",
-      vendorId: "mamas-kitchen",
-      category: "Food",
-      rating: 5,
-      comment: "Amazing food! The jollof rice is the best on campus. Quick service and friendly staff.",
-      date: "2024-01-15",
-      edited: false
-    },
-    {
-      id: "2",
-      vendorName: "Quick Tailors",
-      vendorId: "quick-tailors",
-      category: "Fashion",
-      rating: 4,
-      comment: "Good tailoring service, reasonable prices. Delivered on time.",
-      date: "2024-01-12",
-      edited: true
-    },
-    {
-      id: "3",
-      vendorName: "Campus Cab",
-      vendorId: "campus-cab",
-      category: "Transport",
-      rating: 2,
-      comment: "Driver was late and the car wasn't very clean. Service could be better.",
-      date: "2024-01-10",
-      edited: false
-    },
-    {
-      id: "4",
-      vendorName: "Tech Repair Hub",
-      vendorId: "tech-repair-hub",
-      category: "Tech Repair",
-      rating: 5,
-      comment: "Excellent repair service! Fixed my phone quickly and at a fair price.",
-      date: "2024-01-08",
-      edited: false
-    }
-  ];
+  const handleDeleteReview = async (reviewId: string, vendorName: string) => {
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId);
 
-  const handleDeleteReview = (reviewId: string, vendorName: string) => {
-    // Mock delete review
-    toast({
-      title: "Review deleted",
-      description: `Your review for ${vendorName} has been deleted.`,
-    });
+      if (error) {
+        toast({
+          title: "Error deleting review",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Review deleted",
+          description: `Your review for ${vendorName} has been deleted.`,
+        });
+        fetchUserData(); // Refresh the data
+      }
+    } catch (error) {
+      toast({
+        title: "Error deleting review",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -88,6 +132,21 @@ const UserDashboard = () => {
     return "text-red-600";
   };
 
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    : "0.0";
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center py-12">
+          <div className="text-lg">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -99,20 +158,27 @@ const UserDashboard = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-16 w-16">
+                  <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback className="text-xl">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
-                  <p className="text-gray-600">{user.email}</p>
-                  <p className="text-sm text-gray-500">Member since {user.joinDate}</p>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {profile?.full_name || 'User'}
+                  </h1>
+                  <p className="text-gray-600">{profile?.email}</p>
+                  <p className="text-sm text-gray-500">
+                    Member since {new Date(profile?.created_at || '').toLocaleDateString()}
+                  </p>
                 </div>
               </div>
               <div className="mt-4 sm:mt-0">
-                <Button className="bg-green-600 hover:bg-green-700">
-                  Edit Profile
-                </Button>
+                <Link to="/user-profile">
+                  <Button className="bg-green-600 hover:bg-green-700">
+                    Edit Profile
+                  </Button>
+                </Link>
               </div>
             </div>
           </CardHeader>
@@ -120,12 +186,12 @@ const UserDashboard = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{user.totalReviews}</div>
+                <div className="text-2xl font-bold text-gray-900">{reviews.length}</div>
                 <div className="text-sm text-gray-600">Total Reviews</div>
               </div>
               <div className="text-center">
-                <div className={`text-2xl font-bold ${getRatingColor(user.averageRating)}`}>
-                  {user.averageRating}
+                <div className={`text-2xl font-bold ${getRatingColor(parseFloat(averageRating))}`}>
+                  {averageRating}
                 </div>
                 <div className="text-sm text-gray-600">Average Rating Given</div>
               </div>
@@ -170,7 +236,7 @@ const UserDashboard = () => {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>My Reviews ({userReviews.length})</CardTitle>
+              <CardTitle>My Reviews ({reviews.length})</CardTitle>
               <Link to="/vendors">
                 <Button className="bg-green-600 hover:bg-green-700">
                   Write Review
@@ -181,33 +247,32 @@ const UserDashboard = () => {
           
           <CardContent>
             <div className="space-y-6">
-              {userReviews.map((review) => (
+              {reviews.map((review) => (
                 <div key={review.id} className="border border-gray-200 rounded-lg p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <div className="flex items-center space-x-3 mb-2">
                         <Link 
-                          to={`/vendor/${review.vendorId}`}
+                          to={`/vendor/${review.vendor.id}`}
                           className="text-lg font-semibold text-green-600 hover:text-green-700"
                         >
-                          {review.vendorName}
+                          {review.vendor.business_name}
                         </Link>
-                        <Badge variant="secondary">{review.category}</Badge>
-                        {review.edited && (
-                          <Badge variant="outline" className="text-xs">Edited</Badge>
-                        )}
+                        <Badge variant="secondary">{review.vendor.category}</Badge>
                       </div>
                       
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="flex">{renderStars(review.rating)}</div>
                         <span className="font-semibold">{review.rating}.0</span>
                         <span className="text-gray-500">•</span>
-                        <span className="text-sm text-gray-500">{review.date}</span>
+                        <span className="text-sm text-gray-500">
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                     
                     <div className="flex space-x-2">
-                      <Link to={`/vendor/${review.vendorId}`}>
+                      <Link to={`/vendor/${review.vendor.id}`}>
                         <Button size="sm" variant="outline">
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -219,19 +284,21 @@ const UserDashboard = () => {
                         size="sm" 
                         variant="outline" 
                         className="text-red-600"
-                        onClick={() => handleDeleteReview(review.id, review.vendorName)}
+                        onClick={() => handleDeleteReview(review.id, review.vendor.business_name)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                   
-                  <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                  {review.comment && (
+                    <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                  )}
                 </div>
               ))}
             </div>
             
-            {userReviews.length === 0 && (
+            {reviews.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📝</div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No reviews yet</h3>

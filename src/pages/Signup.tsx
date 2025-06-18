@@ -11,7 +11,7 @@ import Header from "@/components/Header";
 const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -32,14 +32,24 @@ const Signup = () => {
       return;
     }
 
+    if (!email || !whatsapp) {
+      toast({
+        title: "Missing contact details",
+        description: "Email and WhatsApp number are required for accountability.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     // Mock signup - in a real app, this would make an API call
     setTimeout(() => {
-      if (name && email && password) {
+      if (name && email && whatsapp && password) {
         localStorage.setItem('user', JSON.stringify({
           id: Date.now().toString(),
           name: name,
           email: email,
-          phone: phone,
+          whatsapp: whatsapp,
           type: 'user'
         }));
         
@@ -69,7 +79,7 @@ const Signup = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Join RateAm</CardTitle>
             <CardDescription>
-              Create your account to start rating vendors and sharing your experiences
+              Create your account to start rating vendors. Contact details are required for accountability.
             </CardDescription>
           </CardHeader>
           
@@ -88,7 +98,7 @@ const Signup = () => {
               </div>
               
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -97,17 +107,20 @@ const Signup = () => {
                   placeholder="your.email@example.com"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Required for accountability</p>
               </div>
               
               <div>
-                <Label htmlFor="phone">Phone Number (Optional)</Label>
+                <Label htmlFor="whatsapp">WhatsApp Number *</Label>
                 <Input
-                  id="phone"
+                  id="whatsapp"
                   type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
                   placeholder="+234 900 000 0000"
+                  required
                 />
+                <p className="text-xs text-gray-500 mt-1">Required for accountability</p>
               </div>
               
               <div>

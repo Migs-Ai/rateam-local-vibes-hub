@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, Search, MapPin, Phone, Filter } from "lucide-react";
+import { Star, Search, MapPin, Phone, Filter, Clock, Wifi } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 
@@ -13,84 +13,158 @@ const VendorDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("rating");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const vendors = [
     {
-      id: "mamas-kitchen",
-      name: "Mama's Kitchen",
-      category: "Food",
-      rating: 4.8,
-      reviewCount: 234,
+      id: "lions-shawarma",
+      name: "Lion's Shawarma",
+      category: "Food & Restaurants",
+      rating: 4.9,
+      reviewCount: 287,
       phone: "+234 901 234 5678",
       location: "Near Main Gate",
-      description: "Delicious home-cooked meals at affordable prices",
-      image: "🍽️"
+      description: "Best shawarma in town with authentic Lebanese taste",
+      image: "🌯",
+      status: "open",
+      priceRange: "₦₦"
     },
     {
-      id: "quick-tailors",
-      name: "Quick Tailors", 
-      category: "Fashion",
-      rating: 4.6,
+      id: "campus-store",
+      name: "Campus Store", 
+      category: "Groceries & Provisions",
+      rating: 4.7,
       reviewCount: 156,
       phone: "+234 902 345 6789",
       location: "Student Village",
+      description: "One-stop shop for all your daily essentials",
+      image: "🛒",
+      status: "open",
+      priceRange: "₦"
+    },
+    {
+      id: "quick-tailors",
+      name: "Quick Tailors",
+      category: "Fashion & Clothing",
+      rating: 4.6,
+      reviewCount: 134,
+      phone: "+234 903 456 7890",
+      location: "Hostel Area",
       description: "Fast and quality tailoring services",
-      image: "✂️"
+      image: "✂️",
+      status: "closed",
+      priceRange: "₦₦"
     },
     {
       id: "campus-cab",
       name: "Campus Cab",
-      category: "Transport",
+      category: "Transport & Logistics",
       rating: 4.7,
       reviewCount: 89,
-      phone: "+234 903 456 7890",
+      phone: "+234 904 567 8901",
       location: "Campus Wide",
       description: "Reliable transportation around campus",
-      image: "🚗"
+      image: "🚗",
+      status: "open",
+      priceRange: "₦"
     },
     {
       id: "tech-repair-hub",
       name: "Tech Repair Hub",
-      category: "Tech Repair",
+      category: "Tech & Gadgets",
       rating: 4.5,
       reviewCount: 67,
-      phone: "+234 904 567 8901",
+      phone: "+234 905 678 9012",
       location: "Engineering Building",
       description: "Phone and laptop repair specialists",
-      image: "📱"
+      image: "📱",
+      status: "open",
+      priceRange: "₦₦₦"
     },
     {
       id: "fresh-cuts-barber",
       name: "Fresh Cuts Barber",
-      category: "Barber",
+      category: "Health & Wellness",
       rating: 4.9,
       reviewCount: 123,
-      phone: "+234 905 678 9012",
+      phone: "+234 906 789 0123",
       location: "Hostel Area",
       description: "Professional haircuts and grooming",
-      image: "💇‍♂️"
+      image: "💇‍♂️",
+      status: "open",
+      priceRange: "₦₦"
     },
     {
-      id: "clean-laundry",
-      name: "Clean Laundry Service",
-      category: "Laundry",
+      id: "midnight-munchies",
+      name: "Midnight Munchies",
+      category: "Food & Restaurants",
+      rating: 4.4,
+      reviewCount: 98,
+      phone: "+234 907 890 1234",
+      location: "24/7 Delivery",
+      description: "Late night food delivery service",
+      image: "🍕",
+      status: "open",
+      priceRange: "₦₦"
+    },
+    {
+      id: "study-space-cafe",
+      name: "Study Space Café",
+      category: "Entertainment & Hangouts",
       rating: 4.3,
-      reviewCount: 45,
-      phone: "+234 906 789 0123",
-      location: "Residential Area",
-      description: "Quick and clean laundry services",
-      image: "👔"
+      reviewCount: 76,
+      phone: "+234 908 901 2345",
+      location: "Library Complex",
+      description: "Quiet café perfect for studying with free WiFi",
+      image: "☕",
+      status: "open",
+      priceRange: "₦₦"
     }
   ];
 
-  const categories = ["all", "Food", "Fashion", "Tech Repair", "Transport", "Barber", "Laundry"];
+  const categories = [
+    "all",
+    "Food & Restaurants",
+    "Groceries & Provisions", 
+    "Drinks & Beverages",
+    "Academic & Stationery",
+    "Fashion & Clothing",
+    "Tech & Gadgets",
+    "Hostel & Accommodation",
+    "Health & Wellness",
+    "Transport & Logistics",
+    "Entertainment & Hangouts",
+    "Miscellaneous Services"
+  ];
+
+  // Fuzzy search function
+  const fuzzySearch = (text: string, searchTerm: string) => {
+    const term = searchTerm.toLowerCase();
+    const target = text.toLowerCase();
+    
+    // Direct match
+    if (target.includes(term)) return true;
+    
+    // Check if search term characters appear in order
+    let searchIndex = 0;
+    for (let i = 0; i < target.length && searchIndex < term.length; i++) {
+      if (target[i] === term[searchIndex]) {
+        searchIndex++;
+      }
+    }
+    return searchIndex === term.length;
+  };
 
   const filteredVendors = vendors
-    .filter(vendor => 
-      vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.category.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter(vendor => selectedCategory === "all" || vendor.category === selectedCategory)
+    .filter(vendor => {
+      const matchesSearch = fuzzySearch(vendor.name, searchTerm) || 
+                           fuzzySearch(vendor.category, searchTerm) ||
+                           fuzzySearch(vendor.description, searchTerm);
+      const matchesCategory = selectedCategory === "all" || vendor.category === selectedCategory;
+      const matchesStatus = statusFilter === "all" || vendor.status === statusFilter;
+      
+      return matchesSearch && matchesCategory && matchesStatus;
+    })
     .sort((a, b) => {
       switch (sortBy) {
         case "rating":
@@ -114,13 +188,13 @@ const VendorDirectory = () => {
           <p className="text-gray-600">Find and review local vendors on campus</p>
         </div>
 
-        {/* Filters */}
+        {/* Enhanced Filters */}
         <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search vendors..."
+                placeholder="Fuzzy search (e.g., 'sha' finds 'Shawarma')"
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -137,6 +211,17 @@ const VendorDirectory = () => {
                     {category === "all" ? "All Categories" : category}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="open">Open Now</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
 
@@ -174,7 +259,19 @@ const VendorDirectory = () => {
                   <div className="flex items-center space-x-3">
                     <div className="text-4xl">{vendor.image}</div>
                     <div>
-                      <CardTitle className="text-lg">{vendor.name}</CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <CardTitle className="text-lg">{vendor.name}</CardTitle>
+                        {vendor.status === "open" ? (
+                          <Badge className="bg-green-100 text-green-800 text-xs">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Open
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            Closed
+                          </Badge>
+                        )}
+                      </div>
                       <Badge variant="secondary" className="mt-1">
                         {vendor.category}
                       </Badge>
@@ -187,10 +284,13 @@ const VendorDirectory = () => {
                 <div className="space-y-3">
                   <p className="text-gray-600 text-sm">{vendor.description}</p>
                   
-                  <div className="flex items-center space-x-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                    <span className="font-semibold">{vendor.rating}</span>
-                    <span className="text-gray-500">({vendor.reviewCount} reviews)</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1">
+                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                      <span className="font-semibold">{vendor.rating}</span>
+                      <span className="text-gray-500">({vendor.reviewCount})</span>
+                    </div>
+                    <span className="text-sm font-medium text-green-600">{vendor.priceRange}</span>
                   </div>
                   
                   <div className="flex items-center text-gray-600 text-sm">
@@ -206,7 +306,7 @@ const VendorDirectory = () => {
                   <div className="pt-3">
                     <Link to={`/vendor/${vendor.id}`}>
                       <Button className="w-full bg-green-600 hover:bg-green-700">
-                        View Profile
+                        View Profile & Rate
                       </Button>
                     </Link>
                   </div>
@@ -220,7 +320,7 @@ const VendorDirectory = () => {
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No vendors found</h3>
-            <p className="text-gray-600">Try adjusting your search criteria</p>
+            <p className="text-gray-600">Try adjusting your search criteria or using fuzzy search</p>
           </div>
         )}
       </div>

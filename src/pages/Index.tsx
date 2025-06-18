@@ -3,26 +3,61 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Search, MapPin, Users, TrendingUp } from "lucide-react";
+import { Star, Search, MapPin, Users, TrendingUp, Filter, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Updated categories with the 11 main categories
   const categories = [
-    { name: "Food", icon: "🍕", count: 45 },
-    { name: "Fashion", icon: "👕", count: 23 },
-    { name: "Tech Repair", icon: "📱", count: 12 },
-    { name: "Transport", icon: "🚗", count: 18 },
-    { name: "Laundry", icon: "👔", count: 8 },
-    { name: "Barber", icon: "✂️", count: 15 }
+    { name: "Food & Restaurants", icon: "🍕", count: 45 },
+    { name: "Groceries & Provisions", icon: "🛒", count: 23 },
+    { name: "Drinks & Beverages", icon: "🥤", count: 12 },
+    { name: "Academic & Stationery", icon: "📚", count: 18 },
+    { name: "Fashion & Clothing", icon: "👕", count: 8 },
+    { name: "Tech & Gadgets", icon: "📱", count: 15 },
+    { name: "Hostel & Accommodation", icon: "🏠", count: 7 },
+    { name: "Health & Wellness", icon: "💊", count: 9 },
+    { name: "Transport & Logistics", icon: "🚗", count: 14 },
+    { name: "Entertainment & Hangouts", icon: "🎮", count: 11 },
+    { name: "Miscellaneous Services", icon: "🔧", count: 20 }
+  ];
+
+  // Mock vendor suggestions for auto-complete
+  const vendorSuggestions = [
+    "Lion's Shawarma",
+    "Mama's Kitchen", 
+    "Quick Tailors",
+    "Campus Cab",
+    "Tech Repair Hub",
+    "Fresh Cuts Barber"
+  ];
+
+  const filteredSuggestions = vendorSuggestions.filter(vendor =>
+    vendor.toLowerCase().includes(searchTerm.toLowerCase()) && searchTerm.length > 0
+  );
+
+  // Live polls data
+  const currentPoll = {
+    title: "Vendor of the Week",
+    description: "Vote for your favorite vendor this week!",
+    topVendor: "Lion's Shawarma",
+    votes: 234,
+    timeLeft: "2 days left"
+  };
+
+  const trendingPolls = [
+    { title: "Best Late Night Food", leader: "Midnight Munchies", votes: 156 },
+    { title: "Most Reliable Transport", leader: "Campus Express", votes: 98 }
   ];
 
   const topVendors = [
-    { name: "Mama's Kitchen", category: "Food", rating: 4.8, reviews: 234, image: "🍽️" },
-    { name: "Quick Tailors", category: "Fashion", rating: 4.6, reviews: 156, image: "✂️" },
-    { name: "Campus Cab", category: "Transport", rating: 4.7, reviews: 89, image: "🚗" }
+    { name: "Lion's Shawarma", category: "Food & Restaurants", rating: 4.9, reviews: 287, image: "🌯" },
+    { name: "Campus Store", category: "Groceries & Provisions", rating: 4.7, reviews: 156, image: "🛒" },
+    { name: "Quick Tailors", category: "Fashion & Clothing", rating: 4.6, reviews: 134, image: "✂️" }
   ];
 
   return (
@@ -58,16 +93,57 @@ const Index = () => {
             RateAm.com helps you rate and find trusted vendors near you. Join our community and discover the best local services.
           </p>
           
-          {/* Search Bar */}
-          <div className="relative max-w-md mx-auto mb-8">
+          {/* Enhanced Search Bar with Auto-suggestions */}
+          <div className="relative max-w-md mx-auto mb-6">
             <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search for vendors..."
+              placeholder="Search vendors... (e.g., Lion's Shawarma)"
               className="pl-10 py-3 text-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             />
+            
+            {/* Auto-suggestions dropdown */}
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 mt-1">
+                {filteredSuggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-left"
+                    onClick={() => {
+                      setSearchTerm(suggestion);
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    <Search className="inline h-4 w-4 mr-2 text-gray-400" />
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quick Filter Buttons */}
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            <Button variant="outline" className="bg-white hover:bg-green-50 border-green-200">
+              <Clock className="h-4 w-4 mr-2" />
+              Open Now
+            </Button>
+            <Button variant="outline" className="bg-white hover:bg-green-50 border-green-200">
+              <Star className="h-4 w-4 mr-2" />
+              Top Rated
+            </Button>
+            <Button variant="outline" className="bg-white hover:bg-green-50 border-green-200">
+              <MapPin className="h-4 w-4 mr-2" />
+              Near Me
+            </Button>
+            <Button variant="outline" className="bg-white hover:bg-green-50 border-green-200">
+              <Filter className="h-4 w-4 mr-2" />
+              More Filters
+            </Button>
           </div>
 
           {/* CTA Buttons */}
@@ -88,18 +164,79 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Live Polls Widget */}
+      <section className="py-12 px-4 bg-gradient-to-r from-purple-50 to-pink-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h3 className="text-3xl font-bold text-gray-900 mb-2">Live Polls</h3>
+            <p className="text-gray-600">Vote and see what the community thinks!</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Main Poll */}
+            <Card className="md:col-span-2 bg-gradient-to-br from-green-100 to-blue-100 border-2 border-green-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl text-green-800">{currentPoll.title}</CardTitle>
+                  <Badge variant="secondary" className="bg-green-200 text-green-800">
+                    {currentPoll.timeLeft}
+                  </Badge>
+                </div>
+                <CardDescription className="text-green-700">
+                  {currentPoll.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="font-bold text-lg text-green-900">🏆 {currentPoll.topVendor}</h4>
+                    <p className="text-green-700">{currentPoll.votes} votes</p>
+                  </div>
+                  <Link to="/polls">
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      Vote Now
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Trending Polls */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900">Trending Polls</h4>
+              {trendingPolls.map((poll, index) => (
+                <Card key={index} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <h5 className="font-medium text-sm mb-2">{poll.title}</h5>
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span>Leading: {poll.leader}</span>
+                      <span>{poll.votes} votes</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              <Link to="/polls">
+                <Button variant="outline" className="w-full text-sm">
+                  View All Polls
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Categories */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <h3 className="text-3xl font-bold text-center mb-12">Browse by Category</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {categories.map((category) => (
-              <Link key={category.name} to={`/vendors?category=${category.name}`}>
+              <Link key={category.name} to={`/vendors?category=${encodeURIComponent(category.name)}`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer text-center">
                   <CardContent className="p-6">
                     <div className="text-4xl mb-3">{category.icon}</div>
-                    <h4 className="font-semibold text-gray-900">{category.name}</h4>
-                    <p className="text-sm text-gray-500">{category.count} vendors</p>
+                    <h4 className="font-semibold text-gray-900 text-sm">{category.name}</h4>
+                    <p className="text-xs text-gray-500">{category.count} vendors</p>
                   </CardContent>
                 </Card>
               </Link>

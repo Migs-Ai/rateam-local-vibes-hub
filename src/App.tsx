@@ -14,6 +14,7 @@ import VendorSignup from "./pages/VendorSignup";
 import VendorLogin from "./pages/VendorLogin";
 import VendorDashboard from "./pages/VendorDashboard";
 import UserDashboard from "./pages/UserDashboard";
+import UserProfile from "./pages/UserProfile";
 import ReviewForm from "./pages/ReviewForm";
 import Polls from "./pages/Polls";
 import AdminPanel from "./pages/AdminPanel";
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/vendor-login" element={<VendorLogin />} />
           <Route path="/vendor-dashboard" element={<VendorDashboard />} />
           <Route path="/user-dashboard" element={<UserDashboard />} />
+          <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/review/:vendorId" element={<ReviewForm />} />
           <Route path="/polls" element={<Polls />} />
           <Route path="/admin" element={<AdminPanel />} />

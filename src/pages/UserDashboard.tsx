@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,7 +78,12 @@ const UserDashboard = () => {
       if (reviewsError) {
         console.error('Error fetching reviews:', reviewsError);
       } else {
-        setReviews(reviewsData || []);
+        // Transform the data to match our Review interface
+        const transformedReviews = (reviewsData || []).map(review => ({
+          ...review,
+          vendor: review.vendors
+        }));
+        setReviews(transformedReviews);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);

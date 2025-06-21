@@ -52,7 +52,7 @@ const AdminPanel = () => {
         // Transform the data to match our Poll interface
         const transformedData = (data || []).map(poll => ({
           ...poll,
-          options: Array.isArray(poll.options) ? poll.options : [],
+          options: Array.isArray(poll.options) ? (poll.options as string[]) : [],
           votes: poll.votes && typeof poll.votes === 'object' ? poll.votes as Record<string, number> : {}
         }));
         setPolls(transformedData);

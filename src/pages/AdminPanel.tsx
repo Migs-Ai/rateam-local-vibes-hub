@@ -18,6 +18,7 @@ interface Poll {
   status: string;
   created_at: string;
   ends_at: string;
+  votes: Record<string, number>;
 }
 
 const AdminPanel = () => {
@@ -48,7 +49,13 @@ const AdminPanel = () => {
       if (error) {
         console.error('Error fetching polls:', error);
       } else {
-        setPolls(data || []);
+        // Transform the data to match our Poll interface
+        const transformedData = (data || []).map(poll => ({
+          ...poll,
+          options: Array.isArray(poll.options) ? poll.options : [],
+          votes: poll.votes && typeof poll.votes === 'object' ? poll.votes as Record<string, number> : {}
+        }));
+        setPolls(transformedData);
       }
     } catch (error) {
       console.error('Error fetching polls:', error);

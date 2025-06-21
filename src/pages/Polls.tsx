@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +42,13 @@ const Polls = () => {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setPolls(data);
+        // Transform the data to match our Poll interface
+        const transformedData = data.map(poll => ({
+          ...poll,
+          options: Array.isArray(poll.options) ? poll.options : [],
+          votes: poll.votes && typeof poll.votes === 'object' ? poll.votes as Record<string, number> : {}
+        }));
+        setPolls(transformedData);
       }
     } catch (error) {
       console.error('Error fetching polls:', error);

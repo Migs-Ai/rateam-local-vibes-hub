@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +37,13 @@ const Index = () => {
         .limit(3);
 
       if (!error && data) {
-        setLivePolls(data);
+        // Transform the data to match our Poll interface
+        const transformedData = data.map(poll => ({
+          ...poll,
+          options: Array.isArray(poll.options) ? poll.options : [],
+          votes: poll.votes && typeof poll.votes === 'object' ? poll.votes as Record<string, number> : {}
+        }));
+        setLivePolls(transformedData);
       }
     } catch (error) {
       console.error('Error fetching live polls:', error);

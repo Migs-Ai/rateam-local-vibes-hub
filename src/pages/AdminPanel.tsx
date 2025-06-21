@@ -1,504 +1,286 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Users, Store, MessageSquare, Flag, Search, Trash2, Eye, Ban, CheckCircle, BarChart3 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
+import { Plus, Trash2 } from "lucide-react";
+
+interface Poll {
+  id: string;
+  title: string;
+  description: string;
+  options: string[];
+  status: string;
+  created_at: string;
+  ends_at: string;
+}
 
 const AdminPanel = () => {
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [polls, setPolls] = useState<Poll[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newPoll, setNewPoll] = useState({
+    title: "",
+    description: "",
+    options: ["", ""],
+    endsAt: ""
+  });
 
-  // Mock admin stats
-  const stats = {
-    totalUsers: 1247,
-    totalVendors: 89,
-    totalReviews: 3456,
-    flaggedReviews: 12,
-    newUsersThisWeek: 156,
-    newVendorsThisWeek: 7
+  useEffect(() => {
+    if (user && isAdmin) {
+      fetchPolls();
+    }
+  }, [user, isAdmin]);
+
+  const fetchPolls = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('polls')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching polls:', error);
+      } else {
+        setPolls(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching polls:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Mock users data
-  const users = [
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@email.com",
-      joinDate: "2024-01-15",
-      reviewsCount: 23,
-      status: "active",
-      avatar: "JD"
-    },
-    {
-      id: "2",
-      name: "Sarah Johnson",
-      email: "sarah@email.com",
-      joinDate: "2024-01-10",
-      reviewsCount: 45,
-      status: "active",
-      avatar: "SJ"
-    },
-    {
-      id: "3",
-      name: "Mike Chen",
-      email: "mike@email.com",
-      joinDate: "2024-01-08",
-      reviewsCount: 12,
-      status: "suspended",
-      avatar: "MC"
+  const handleCreatePoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPoll.title || newPoll.options.filter(opt => opt.trim()).length < 2) {
+      toast({
+        title: "Invalid poll",
+        description: "Please provide a title and at least 2 options.",
+        variant: "destructive",
+      });
+      return;
     }
-  ];
 
-  // Mock vendors data
-  const vendors = [
-    {
-      id: "1",
-      businessName: "Mama's Kitchen",
-      category: "Food",
-      email: "mama@kitchen.com",
-      joinDate: "2024-01-01",
-      rating: 4.8,
-      reviewsCount: 234,
-      status: "active"
-    },
-    {
-      id: "2",
-      businessName: "Quick Tailors",
-      category: "Fashion",
-      email: "quick@tailors.com",
-      joinDate: "2024-01-05",
-      rating: 4.6,
-      reviewsCount: 156,
-      status: "active"
-    },
-    {
-      id: "3",
-      businessName: "Tech Repair Hub",
-      category: "Tech Repair",
-      email: "tech@repair.com",
-      joinDate: "2024-01-12",
-      rating: 4.5,
-      reviewsCount: 67,
-      status: "pending"
+    try {
+      const { error } = await supabase
+        .from('polls')
+        .insert({
+          title: newPoll.title,
+          description: newPoll.description,
+          options: newPoll.options.filter(opt => opt.trim()),
+          ends_at: newPoll.endsAt || null,
+          created_by: user?.id,
+          status: 'active'
+        });
+
+      if (error) {
+        toast({
+          title: "Error creating poll",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Poll created",
+          description: "New poll has been created successfully.",
+        });
+        setNewPoll({
+          title: "",
+          description: "",
+          options: ["", ""],
+          endsAt: ""
+        });
+        fetchPolls();
+      }
+    } catch (error) {
+      toast({
+        title: "Error creating poll",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
     }
-  ];
+  };
 
-  // Mock flagged reviews
-  const flaggedReviews = [
-    {
-      id: "1",
-      reviewer: "Anonymous User",
-      vendor: "Mama's Kitchen",
-      rating: 1,
-      comment: "This is spam content with inappropriate language...",
-      flagReason: "Inappropriate content",
-      flaggedBy: "User123",
-      date: "2024-01-15",
-      status: "pending"
-    },
-    {
-      id: "2",
-      reviewer: "John Doe",
-      vendor: "Quick Tailors",
-      rating: 1,
-      comment: "Fake review posted by competitor...",
-      flagReason: "Fake review",
-      flaggedBy: "VendorReport",
-      date: "2024-01-14",
-      status: "pending"
-    }
-  ];
-
-  const handleUserAction = (userId: string, action: string) => {
-    toast({
-      title: `User ${action}`,
-      description: `User has been ${action.toLowerCase()} successfully.`,
+  const addOption = () => {
+    setNewPoll({
+      ...newPoll,
+      options: [...newPoll.options, ""]
     });
   };
 
-  const handleVendorAction = (vendorId: string, action: string) => {
-    toast({
-      title: `Vendor ${action}`,
-      description: `Vendor has been ${action.toLowerCase()} successfully.`,
+  const updateOption = (index: number, value: string) => {
+    const updatedOptions = [...newPoll.options];
+    updatedOptions[index] = value;
+    setNewPoll({
+      ...newPoll,
+      options: updatedOptions
     });
   };
 
-  const handleReviewAction = (reviewId: string, action: string) => {
-    toast({
-      title: `Review ${action}`,
-      description: `Review has been ${action.toLowerCase()} successfully.`,
-    });
+  const removeOption = (index: number) => {
+    if (newPoll.options.length > 2) {
+      const updatedOptions = newPoll.options.filter((_, i) => i !== index);
+      setNewPoll({
+        ...newPoll,
+        options: updatedOptions
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center py-12">
+          <div className="text-lg">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Admin Panel</h1>
-          <p className="text-gray-600">Manage users, vendors, and content on RateAm.com</p>
+          <p className="text-gray-600">Manage polls and platform content.</p>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Users</p>
-                  <p className="text-xl font-bold">{stats.totalUsers}</p>
-                </div>
-                <Users className="h-6 w-6 text-blue-400" />
+        {/* Create New Poll */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Create New Poll</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreatePoll} className="space-y-6">
+              <div>
+                <Label htmlFor="title">Poll Title</Label>
+                <Input
+                  id="title"
+                  value={newPoll.title}
+                  onChange={(e) => setNewPoll({ ...newPoll, title: e.target.value })}
+                  placeholder="Best Vendor of the Month"
+                  required
+                />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Vendors</p>
-                  <p className="text-xl font-bold">{stats.totalVendors}</p>
-                </div>
-                <Store className="h-6 w-6 text-green-400" />
+              
+              <div>
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  value={newPoll.description}
+                  onChange={(e) => setNewPoll({ ...newPoll, description: e.target.value })}
+                  placeholder="Vote for your favorite vendor this month!"
+                  rows={3}
+                />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Reviews</p>
-                  <p className="text-xl font-bold">{stats.totalReviews}</p>
-                </div>
-                <MessageSquare className="h-6 w-6 text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Flagged Reviews</p>
-                  <p className="text-xl font-bold text-red-600">{stats.flaggedReviews}</p>
-                </div>
-                <Flag className="h-6 w-6 text-red-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">New Users</p>
-                  <p className="text-xl font-bold">{stats.newUsersThisWeek}</p>
-                  <p className="text-xs text-gray-500">This week</p>
-                </div>
-                <BarChart3 className="h-6 w-6 text-indigo-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">New Vendors</p>
-                  <p className="text-xl font-bold">{stats.newVendorsThisWeek}</p>
-                  <p className="text-xs text-gray-500">This week</p>
-                </div>
-                <BarChart3 className="h-6 w-6 text-orange-400" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="vendors">Vendors</TabsTrigger>
-            <TabsTrigger value="reviews">Flagged Reviews</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+              <div>
+                <Label>Poll Options</Label>
+                <div className="space-y-3 mt-2">
+                  {newPoll.options.map((option, index) => (
+                    <div key={index} className="flex items-center space-x-3">
+                      <Input
+                        value={option}
+                        onChange={(e) => updateOption(index, e.target.value)}
+                        placeholder={`Option ${index + 1}`}
+                        required
+                      />
+                      {newPoll.options.length > 2 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeOption(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addOption}
+                  className="mt-3"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Option
+                </Button>
+              </div>
 
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search users..."
-                      className="pl-10"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+              <div>
+                <Label htmlFor="endsAt">End Date (Optional)</Label>
+                <Input
+                  id="endsAt"
+                  type="datetime-local"
+                  value={newPoll.endsAt}
+                  onChange={(e) => setNewPoll({ ...newPoll, endsAt: e.target.value })}
+                />
+              </div>
+
+              <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                Create Poll
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Existing Polls */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Existing Polls ({polls.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {polls.map((poll) => (
+                <div key={poll.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-lg">{poll.title}</h3>
+                      {poll.description && (
+                        <p className="text-gray-600 mt-1">{poll.description}</p>
+                      )}
+                      <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                        <span>Status: {poll.status}</span>
+                        <span>Created: {new Date(poll.created_at).toLocaleDateString()}</span>
+                        {poll.ends_at && (
+                          <span>Ends: {new Date(poll.ends_at).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="suspended">Suspended</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="mt-3">
+                    <h4 className="font-medium text-sm">Options:</h4>
+                    <ul className="mt-1 text-sm text-gray-600">
+                      {poll.options.map((option, index) => (
+                        <li key={index}>• {option}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              </CardHeader>
+              ))}
               
-              <CardContent>
-                <div className="space-y-4">
-                  {users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <Avatar>
-                          <AvatarFallback>{user.avatar}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-semibold">{user.name}</h4>
-                          <p className="text-sm text-gray-600">{user.email}</p>
-                          <p className="text-xs text-gray-500">
-                            Joined: {user.joinDate} • {user.reviewsCount} reviews
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Badge variant={user.status === "active" ? "default" : "destructive"}>
-                          {user.status}
-                        </Badge>
-                        
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          
-                          {user.status === "active" ? (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="outline" className="text-orange-600">
-                                  <Ban className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Suspend User</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to suspend {user.name}? They will not be able to post reviews while suspended.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleUserAction(user.id, "Suspended")}
-                                    className="bg-orange-600 hover:bg-orange-700"
-                                  >
-                                    Suspend
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-green-600"
-                              onClick={() => handleUserAction(user.id, "Activated")}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="text-red-600">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete User</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete {user.name}'s account and all their reviews.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleUserAction(user.id, "Deleted")}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              {polls.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No polls created yet.</p>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Vendors Tab */}
-          <TabsContent value="vendors" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vendor Management</CardTitle>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-4">
-                  {vendors.map((vendor) => (
-                    <div key={vendor.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-semibold">{vendor.businessName}</h4>
-                        <p className="text-sm text-gray-600">{vendor.email}</p>
-                        <p className="text-xs text-gray-500">
-                          {vendor.category} • Joined: {vendor.joinDate} • Rating: {vendor.rating} ({vendor.reviewsCount} reviews)
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Badge variant={vendor.status === "active" ? "default" : vendor.status === "pending" ? "secondary" : "destructive"}>
-                          {vendor.status}
-                        </Badge>
-                        
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          
-                          {vendor.status === "pending" && (
-                            <Button 
-                              size="sm" 
-                              className="bg-green-600 hover:bg-green-700"
-                              onClick={() => handleVendorAction(vendor.id, "Approved")}
-                            >
-                              Approve
-                            </Button>
-                          )}
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="text-red-600">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete {vendor.businessName} and all associated reviews.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleVendorAction(vendor.id, "Deleted")}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Flagged Reviews Tab */}
-          <TabsContent value="reviews" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Flagged Reviews</CardTitle>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-4">
-                  {flaggedReviews.map((review) => (
-                    <div key={review.id} className="p-4 border rounded-lg border-red-200 bg-red-50">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold text-red-800">{review.reviewer} → {review.vendor}</h4>
-                          <p className="text-sm text-red-600">
-                            Flagged for: {review.flagReason} • By: {review.flaggedBy} • {review.date}
-                          </p>
-                        </div>
-                        <Badge variant="destructive">Flagged</Badge>
-                      </div>
-                      
-                      <p className="text-gray-700 mb-4 p-3 bg-white rounded border">
-                        "{review.comment}"
-                      </p>
-                      
-                      <div className="flex space-x-3">
-                        <Button 
-                          size="sm" 
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleReviewAction(review.id, "Approved")}
-                        >
-                          Approve
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => handleReviewAction(review.id, "Removed")}
-                        >
-                          Remove
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          Contact Reviewer
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Analytics</CardTitle>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="text-center py-12">
-                  <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics Dashboard</h3>
-                  <p className="text-gray-600">Detailed analytics and reporting features coming soon!</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

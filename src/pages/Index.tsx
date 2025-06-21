@@ -1,29 +1,63 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Search, MapPin, Users, TrendingUp, Filter, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/Header";
+
+interface Poll {
+  id: string;
+  title: string;
+  description: string;
+  options: string[];
+  votes: Record<string, number>;
+  created_at: string;
+  ends_at: string;
+}
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [livePolls, setLivePolls] = useState<Poll[]>([]);
 
-  // Updated categories with the 11 main categories
+  useEffect(() => {
+    fetchLivePolls();
+  }, []);
+
+  const fetchLivePolls = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('polls')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (!error && data) {
+        setLivePolls(data);
+      }
+    } catch (error) {
+      console.error('Error fetching live polls:', error);
+    }
+  };
+
+  // Updated categories with abstract placeholder images
   const categories = [
-    { name: "Food & Restaurants", icon: "🍕", count: 45 },
-    { name: "Groceries & Provisions", icon: "🛒", count: 23 },
-    { name: "Drinks & Beverages", icon: "🥤", count: 12 },
-    { name: "Academic & Stationery", icon: "📚", count: 18 },
-    { name: "Fashion & Clothing", icon: "👕", count: 8 },
-    { name: "Tech & Gadgets", icon: "📱", count: 15 },
-    { name: "Hostel & Accommodation", icon: "🏠", count: 7 },
-    { name: "Health & Wellness", icon: "💊", count: 9 },
-    { name: "Transport & Logistics", icon: "🚗", count: 14 },
-    { name: "Entertainment & Hangouts", icon: "🎮", count: 11 },
-    { name: "Miscellaneous Services", icon: "🔧", count: 20 }
+    { name: "Food & Restaurants", image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop", count: 45 },
+    { name: "Groceries & Provisions", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop", count: 23 },
+    { name: "Drinks & Beverages", image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=300&fit=crop", count: 12 },
+    { name: "Academic & Stationery", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop", count: 18 },
+    { name: "Fashion & Clothing", image: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&h=300&fit=crop", count: 8 },
+    { name: "Tech & Gadgets", image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop", count: 15 },
+    { name: "Hostel & Accommodation", image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop", count: 7 },
+    { name: "Health & Wellness", image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=300&fit=crop", count: 9 },
+    { name: "Transport & Logistics", image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop", count: 14 },
+    { name: "Entertainment & Hangouts", image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop", count: 11 },
+    { name: "Miscellaneous Services", image: "https://images.unsplash.com/photo-1486718448742-163732cd1544?w=400&h=300&fit=crop", count: 20 }
   ];
 
   // Mock vendor suggestions for auto-complete
@@ -40,47 +74,34 @@ const Index = () => {
     vendor.toLowerCase().includes(searchTerm.toLowerCase()) && searchTerm.length > 0
   );
 
-  // Live polls data
-  const currentPoll = {
-    title: "Vendor of the Week",
-    description: "Vote for your favorite vendor this week!",
-    topVendor: "Lion's Shawarma",
-    votes: 234,
-    timeLeft: "2 days left"
+  const topVendors = [
+    { name: "Lion's Shawarma", category: "Food & Restaurants", rating: 4.9, reviews: 287, image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop" },
+    { name: "Campus Store", category: "Groceries & Provisions", rating: 4.7, reviews: 156, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop" },
+    { name: "Quick Tailors", category: "Fashion & Clothing", rating: 4.6, reviews: 134, image: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&h=300&fit=crop" }
+  ];
+
+  const getTotalVotes = (votes: Record<string, number>) => {
+    return Object.values(votes).reduce((sum, count) => sum + count, 0);
   };
 
-  const trendingPolls = [
-    { title: "Best Late Night Food", leader: "Midnight Munchies", votes: 156 },
-    { title: "Most Reliable Transport", leader: "Campus Express", votes: 98 }
-  ];
-
-  const topVendors = [
-    { name: "Lion's Shawarma", category: "Food & Restaurants", rating: 4.9, reviews: 287, image: "🌯" },
-    { name: "Campus Store", category: "Groceries & Provisions", rating: 4.7, reviews: 156, image: "🛒" },
-    { name: "Quick Tailors", category: "Fashion & Clothing", rating: 4.6, reviews: 134, image: "✂️" }
-  ];
+  const getLeadingOption = (options: string[], votes: Record<string, number>) => {
+    let leadingOption = options[0];
+    let maxVotes = votes['0'] || 0;
+    
+    options.forEach((option, index) => {
+      const voteCount = votes[index.toString()] || 0;
+      if (voteCount > maxVotes) {
+        maxVotes = voteCount;
+        leadingOption = option;
+      }
+    });
+    
+    return { option: leadingOption, votes: maxVotes };
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-green-600">RateAm</h1>
-              <span className="ml-1 text-sm text-gray-500">.com</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link to="/login">
-                <Button variant="ghost">Login</Button>
-              </Link>
-              <Link to="/signup">
-                <Button className="bg-green-600 hover:bg-green-700">Sign Up</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="py-20 px-4">
@@ -165,65 +186,57 @@ const Index = () => {
       </section>
 
       {/* Live Polls Widget */}
-      <section className="py-12 px-4 bg-gradient-to-r from-purple-50 to-pink-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h3 className="text-3xl font-bold text-gray-900 mb-2">Live Polls</h3>
-            <p className="text-gray-600">Vote and see what the community thinks!</p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Main Poll */}
-            <Card className="md:col-span-2 bg-gradient-to-br from-green-100 to-blue-100 border-2 border-green-200">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl text-green-800">{currentPoll.title}</CardTitle>
-                  <Badge variant="secondary" className="bg-green-200 text-green-800">
-                    {currentPoll.timeLeft}
-                  </Badge>
-                </div>
-                <CardDescription className="text-green-700">
-                  {currentPoll.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="font-bold text-lg text-green-900">🏆 {currentPoll.topVendor}</h4>
-                    <p className="text-green-700">{currentPoll.votes} votes</p>
-                  </div>
-                  <Link to="/polls">
-                    <Button className="bg-green-600 hover:bg-green-700">
-                      Vote Now
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Trending Polls */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900">Trending Polls</h4>
-              {trendingPolls.map((poll, index) => (
-                <Card key={index} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <h5 className="font-medium text-sm mb-2">{poll.title}</h5>
-                    <div className="flex items-center justify-between text-xs text-gray-600">
-                      <span>Leading: {poll.leader}</span>
-                      <span>{poll.votes} votes</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+      {livePolls.length > 0 && (
+        <section className="py-12 px-4 bg-gradient-to-r from-purple-50 to-pink-50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-8">
+              <h3 className="text-3xl font-bold text-gray-900 mb-2">Live Polls</h3>
+              <p className="text-gray-600">Vote and see what the community thinks!</p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {livePolls.map((poll) => {
+                const totalVotes = getTotalVotes(poll.votes || {});
+                const leading = getLeadingOption(poll.options, poll.votes || {});
+                
+                return (
+                  <Card key={poll.id} className="bg-gradient-to-br from-green-100 to-blue-100 border-2 border-green-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-green-800">{poll.title}</CardTitle>
+                      {poll.description && (
+                        <CardDescription className="text-green-700">
+                          {poll.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h4 className="font-bold text-green-900">🏆 {leading.option}</h4>
+                          <p className="text-green-700">{totalVotes} votes</p>
+                        </div>
+                        <Link to="/polls">
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                            Vote Now
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            
+            <div className="text-center mt-8">
               <Link to="/polls">
-                <Button variant="outline" className="w-full text-sm">
+                <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
                   View All Polls
                 </Button>
               </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Categories */}
       <section className="py-16 px-4 bg-white">
@@ -232,10 +245,16 @@ const Index = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {categories.map((category) => (
               <Link key={category.name} to={`/vendors?category=${encodeURIComponent(category.name)}`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer text-center">
-                  <CardContent className="p-6">
-                    <div className="text-4xl mb-3">{category.icon}</div>
-                    <h4 className="font-semibold text-gray-900 text-sm">{category.name}</h4>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden bg-white">
+                  <div className="h-32 overflow-hidden">
+                    <img 
+                      src={category.image} 
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <CardContent className="p-4 text-center">
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1">{category.name}</h4>
                     <p className="text-xs text-gray-500">{category.count} vendors</p>
                   </CardContent>
                 </Card>
@@ -246,7 +265,7 @@ const Index = () => {
       </section>
 
       {/* Top Rated Vendors */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-center mb-12">
             <TrendingUp className="mr-3 h-6 w-6 text-green-600" />
@@ -255,9 +274,15 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-6">
             {topVendors.map((vendor) => (
               <Link key={vendor.name} to={`/vendor/${vendor.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden bg-white">
+                  <div className="h-48 overflow-hidden">
+                    <img 
+                      src={vendor.image} 
+                      alt={vendor.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   <CardHeader className="text-center">
-                    <div className="text-6xl mb-4">{vendor.image}</div>
                     <CardTitle className="text-xl">{vendor.name}</CardTitle>
                     <CardDescription>
                       <Badge variant="secondary">{vendor.category}</Badge>
@@ -290,7 +315,7 @@ const Index = () => {
               <ul className="space-y-2 text-gray-400">
                 <li><Link to="/vendors" className="hover:text-white">Browse Vendors</Link></li>
                 <li><Link to="/polls" className="hover:text-white">Vote in Polls</Link></li>
-                <li><Link to="/signup" className="hover:text-white">Sign Up</Link></li>
+                <li><Link to="/auth" className="hover:text-white">Sign Up</Link></li>
               </ul>
             </div>
             <div>

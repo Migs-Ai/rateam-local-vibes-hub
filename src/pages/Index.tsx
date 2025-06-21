@@ -309,8 +309,14 @@ const Index = () => {
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+          <div className="border-t border-gray-800 mt-8 pt-8 flex justify-between items-center text-gray-400">
             <p>&copy; 2024 RateAm.com. All rights reserved.</p>
+            <Link 
+              to="/admin-login" 
+              className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              Admin
+            </Link>
           </div>
         </div>
       </footer>

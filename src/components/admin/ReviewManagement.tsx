@@ -43,22 +43,38 @@ const ReviewManagement = ({ onStatsUpdate }: ReviewManagementProps) => {
 
   const fetchReviews = async () => {
     try {
-      const { data, error } = await supabase
+      // First, get all reviews
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
-        .select(`
-          *,
-          vendors(business_name),
-          profiles(full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (reviewsError) throw reviewsError;
 
-      const reviewsWithNames = data?.map(review => ({
-        ...review,
-        vendor_name: review.vendors?.business_name || 'Unknown Vendor',
-        user_name: review.profiles?.full_name || 'Anonymous User'
-      })) || [];
+      // Then get vendor and user data separately
+      const reviewsWithNames = await Promise.all(
+        (reviewsData || []).map(async (review) => {
+          // Get vendor name
+          const { data: vendorData } = await supabase
+            .from('vendors')
+            .select('business_name')
+            .eq('id', review.vendor_id)
+            .single();
+
+          // Get user name
+          const { data: userData } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', review.user_id)
+            .single();
+
+          return {
+            ...review,
+            vendor_name: vendorData?.business_name || 'Unknown Vendor',
+            user_name: userData?.full_name || 'Anonymous User'
+          };
+        })
+      );
 
       setReviews(reviewsWithNames);
     } catch (error) {

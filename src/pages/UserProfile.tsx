@@ -10,6 +10,7 @@ import { Star, Edit2, Trash2, User, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const UserProfile = () => {
   const [user, setUser] = useState<any>(null);
@@ -19,6 +20,15 @@ const UserProfile = () => {
   const [whatsapp, setWhatsapp] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user: authUser, isAdmin, loading } = useAuth();
+
+  // Redirect admins to admin dashboard
+  useEffect(() => {
+    if (!loading && isAdmin) {
+      navigate('/admin', { replace: true });
+      return;
+    }
+  }, [isAdmin, loading, navigate]);
 
   // Mock user reviews
   const userReviews = [
@@ -49,18 +59,18 @@ const UserProfile = () => {
   ];
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (!userData) {
-      navigate('/login');
+    if (!authUser && !loading) {
+      navigate('/auth');
       return;
     }
     
-    const parsedUser = JSON.parse(userData);
-    setUser(parsedUser);
-    setName(parsedUser.name || "");
-    setEmail(parsedUser.email || "");
-    setWhatsapp(parsedUser.whatsapp || "");
-  }, [navigate]);
+    if (authUser) {
+      setUser(authUser);
+      setName(authUser.user_metadata?.full_name || "");
+      setEmail(authUser.email || "");
+      setWhatsapp(authUser.user_metadata?.whatsapp || "");
+    }
+  }, [authUser, loading, navigate]);
 
   const handleSaveProfile = () => {
     const updatedUser = {
@@ -70,7 +80,6 @@ const UserProfile = () => {
       whatsapp
     };
     
-    localStorage.setItem('user', JSON.stringify(updatedUser));
     setUser(updatedUser);
     setIsEditing(false);
     
@@ -86,6 +95,10 @@ const UserProfile = () => {
       description: "Your review has been removed.",
     });
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!user) {
     return <div>Loading...</div>;

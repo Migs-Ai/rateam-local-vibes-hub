@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Phone, MessageCircle, Users, TrendingUp, Award } from "lucide-react";
+import { Star, MapPin, Phone, MessageCircle, Users, TrendingUp, Award, Edit, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +35,6 @@ const Index = () => {
         .limit(3);
 
       if (!error && data) {
-        // Transform the data to match our Poll interface
         const transformedData = data.map(poll => ({
           ...poll,
           options: Array.isArray(poll.options) ? (poll.options as string[]) : [],
@@ -48,7 +48,6 @@ const Index = () => {
   };
 
   const handleVote = async (pollId: string, optionIndex: number) => {
-    // For now, just show a message - full voting implementation would require auth
     console.log(`Voting for poll ${pollId}, option ${optionIndex}`);
   };
 
@@ -102,14 +101,16 @@ const Index = () => {
             Help fellow students discover the best services around campus
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/vendors">
-              <Button size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100">
-                Browse Vendors
+            <Link to="/auth">
+              <Button size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100 flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                Write a Review
               </Button>
             </Link>
-            <Link to="/auth">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600">
-                Start Rating
+            <Link to="/vendor-signup">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 flex items-center gap-2">
+                <Store className="h-5 w-5" />
+                Register Your Business
               </Button>
             </Link>
           </div>

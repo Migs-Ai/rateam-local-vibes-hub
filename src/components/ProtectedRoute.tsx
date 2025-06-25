@@ -6,7 +6,6 @@ import { Loader2 } from 'lucide-react';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
-  requireSuperAdmin?: boolean;
   requireVendor?: boolean;
   requireUser?: boolean;
 }
@@ -14,11 +13,10 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   requireAdmin = false,
-  requireSuperAdmin = false,
   requireVendor = false,
   requireUser = false
 }) => {
-  const { user, loading, isAdmin, isSuperAdmin, isVendor, userRoles } = useAuth();
+  const { user, loading, isAdmin, isVendor, userRoles } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -68,10 +66,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check specific role requirements
-  if (requireSuperAdmin && !isSuperAdmin) {
-    return <Navigate to="/" replace />;
-  }
-
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/" replace />;
   }

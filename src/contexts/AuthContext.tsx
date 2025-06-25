@@ -3,18 +3,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, whatsapp?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, whatsapp?: string, metadata?: any) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
-  isSuperAdmin: boolean;
   isVendor: boolean;
   userRoles: string[];
 }
@@ -89,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getRoleBasedRedirectPath = (roles: string[]) => {
-    if (roles.includes('admin') || roles.includes('super_admin')) {
+    if (roles.includes('admin')) {
       return '/admin-dashboard';
     }
     if (roles.includes('vendor')) {
@@ -98,17 +96,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return '/user-dashboard';
   };
 
-  const signUp = async (email: string, password: string, fullName: string, whatsapp?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, whatsapp?: string, metadata?: any) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
-          whatsapp: whatsapp
+          whatsapp: whatsapp,
+          ...metadata
         }
       }
     });
@@ -120,6 +119,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
     } else {
+      // If it's a vendor signup, create vendor profile
+      if (metadata?.user_type === 'vendor' && data.user) {
+        setTimeout(async () => {
+          try {
+            const { error: vendorError } = await supabase
+              .from('vendors')
+              .insert({
+                user_id: data.user!.id,
+                business_name: metadata.business_name,
+                category: metadata.category,
+                location: metadata.location,
+                phone: metadata.phone,
+                whatsapp: whatsapp,
+                email: email,
+                status: 'pending'
+              });
+
+            if (vendorError) {
+              console.error('Error creating vendor profile:', vendorError);
+            }
+          } catch (err) {
+            console.error('Error in vendor profile creation:', err);
+          }
+        }, 1000);
+      }
+
       toast({
         title: "Account created!",
         description: "Please check your email to verify your account.",
@@ -202,8 +227,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
-  const isSuperAdmin = userRoles.includes('super_admin');
+  const isAdmin = userRoles.includes('admin');
   const isVendor = userRoles.includes('vendor');
 
   return (
@@ -216,7 +240,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signInWithGoogle,
       signOut,
       isAdmin,
-      isSuperAdmin,
       isVendor,
       userRoles
     }}>

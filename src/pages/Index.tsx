@@ -1,11 +1,15 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Users, Search, TrendingUp, Store, MessageSquare } from "lucide-react";
 import Header from "@/components/Header";
+import QuickReviewForm from "@/components/QuickReviewForm";
+
 const Index = () => {
-  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Header />
       
       {/* Hero Section */}
@@ -27,7 +31,7 @@ const Index = () => {
               </Button>
             </Link>
             
-            <Link to="/vendor-signup">
+            <Link to="/auth">
               <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
                 <Store className="mr-2 h-5 w-5" />
                 Register Your Business
@@ -64,8 +68,24 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Quick Review Section */}
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Share Your Experience</h2>
+            <p className="text-lg text-gray-600">
+              Help others make informed decisions by reviewing local vendors
+            </p>
+          </div>
+          
+          <div className="flex justify-center">
+            <QuickReviewForm />
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">Why Choose Our Platform?</h2>
@@ -132,13 +152,15 @@ const Index = () => {
             </Link>
             
             <Link to="/vendors">
-              <Button size="lg" variant="outline" className="border-white text-green hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
                 Browse Vendors
               </Button>
             </Link>
           </div>
         </div>
       </section>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;

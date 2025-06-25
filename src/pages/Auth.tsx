@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -16,7 +17,12 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userType, setUserType] = useState<'user' | 'vendor'>('user');
   
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
@@ -33,7 +39,21 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password, fullName, whatsapp);
+        const metadata = userType === 'vendor' ? {
+          full_name: fullName,
+          whatsapp,
+          user_type: 'vendor',
+          business_name: businessName,
+          category,
+          location,
+          phone
+        } : {
+          full_name: fullName,
+          whatsapp,
+          user_type: 'user'
+        };
+
+        const { error } = await signUp(email, password, fullName, whatsapp, metadata);
         if (!error) {
           // Success message is handled in context
         }
@@ -56,6 +76,20 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  const categories = [
+    "Food & Restaurants",
+    "Groceries & Provisions", 
+    "Drinks & Beverages",
+    "Academic & Stationery",
+    "Fashion & Clothing",
+    "Tech & Gadgets",
+    "Hostel & Accommodation",
+    "Health & Wellness",
+    "Transport & Logistics",
+    "Entertainment & Hangouts",
+    "Miscellaneous Services"
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,69 +147,220 @@ const Auth = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignUp && (
+            {isSignUp && (
+              <Tabs value={userType} onValueChange={(value) => setUserType(value as 'user' | 'vendor')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="user">Customer</TabsTrigger>
+                  <TabsTrigger value="vendor">Vendor</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="user" className="space-y-4 mt-4">
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="John Doe"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="your.email@example.com"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="whatsapp">WhatsApp Number (Optional)</Label>
+                      <Input
+                        id="whatsapp"
+                        type="tel"
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        placeholder="+234 900 000 0000"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Create a strong password"
+                        required
+                      />
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      disabled={loading}
+                    >
+                      {loading ? "Creating Account..." : "Create Customer Account"}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="vendor" className="space-y-4 mt-4">
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="businessName">Business Name</Label>
+                      <Input
+                        id="businessName"
+                        type="text"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        placeholder="Mama's Kitchen"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="fullName">Owner Name</Label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="John Doe"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="email">Business Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="business@example.com"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+234 900 000 0000"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="category">Business Category</Label>
+                      <select 
+                        id="category"
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        required
+                      >
+                        <option value="">Select category</option>
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="Near Main Gate, Federal University"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="whatsapp">WhatsApp Number (Optional)</Label>
+                      <Input
+                        id="whatsapp"
+                        type="tel"
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        placeholder="+234 900 000 0000"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Create a strong password"
+                        required
+                      />
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      disabled={loading}
+                    >
+                      {loading ? "Creating Business Account..." : "Create Vendor Account"}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            )}
+
+            {!isSignUp && (
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="John Doe"
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com"
                     required
                   />
                 </div>
-              )}
-              
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.email@example.com"
-                  required
-                />
-              </div>
-
-              {isSignUp && (
+                
                 <div>
-                  <Label htmlFor="whatsapp">WhatsApp Number (Optional)</Label>
+                  <Label htmlFor="password">Password</Label>
                   <Input
-                    id="whatsapp"
-                    type="tel"
-                    value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="+234 900 000 0000"
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    required
                   />
                 </div>
-              )}
-              
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={isSignUp ? "Create a strong password" : "Enter your password"}
-                  required
-                />
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={loading}
-              >
-                {loading 
-                  ? (isSignUp ? "Creating Account..." : "Signing In...") 
-                  : (isSignUp ? "Create Account" : "Sign In")
-                }
-              </Button>
-            </form>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  disabled={loading}
+                >
+                  {loading ? "Signing In..." : "Sign In"}
+                </Button>
+              </form>
+            )}
             
             <div className="text-center">
               <Button

@@ -21,6 +21,7 @@ import ReviewForm from "./pages/ReviewForm";
 import Polls from "./pages/Polls";
 import AdminPanel from "./pages/AdminPanel";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 
@@ -74,6 +75,14 @@ const App = () => (
               } 
             />
             <Route path="/polls" element={<Polls />} />
+            <Route 
+              path="/admin-dashboard" 
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              } 
+            />
             <Route 
               path="/admin" 
               element={

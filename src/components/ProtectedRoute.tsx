@@ -29,6 +29,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" replace />;
   }
 
+  // Auto-redirect admins from user profile to admin dashboard
+  if (location.pathname === '/user-profile' && isAdmin) {
+    return <Navigate to="/admin-dashboard" replace />;
+  }
+
   // Auto-redirect non-admins away from admin routes
   if (location.pathname.startsWith('/admin') && !isAdmin) {
     return <Navigate to="/" replace />;

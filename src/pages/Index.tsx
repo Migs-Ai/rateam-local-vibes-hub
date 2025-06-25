@@ -28,7 +28,7 @@ const Index = () => {
             </Link>
             
             <Link to="/vendor-signup">
-              <Button size="lg" variant="outline" className="bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+              <Button size="lg" variant="outline" className="className=\"bg-green-600 hover:bg-green-700 text-white hover:text-white border-green-600 hover:border-green-700 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200\"\n">
                 <Store className="mr-2 h-5 w-5" />
                 Register Your Business
               </Button>

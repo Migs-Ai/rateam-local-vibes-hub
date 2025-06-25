@@ -7,14 +7,18 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
   requireSuperAdmin?: boolean;
+  requireVendor?: boolean;
+  requireUser?: boolean;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   requireAdmin = false,
-  requireSuperAdmin = false 
+  requireSuperAdmin = false,
+  requireVendor = false,
+  requireUser = false
 }) => {
-  const { user, loading, isAdmin, isSuperAdmin } = useAuth();
+  const { user, loading, isAdmin, isSuperAdmin, isVendor, userRoles } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -29,21 +33,54 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" replace />;
   }
 
-  // Auto-redirect admins from user profile to admin dashboard
+  // Role-based redirects to appropriate dashboards
+  const isRegularUser = userRoles.includes('user') && !isAdmin && !isVendor;
+
+  // Auto-redirect users to their appropriate dashboards
   if (location.pathname === '/user-profile' && isAdmin) {
     return <Navigate to="/admin-dashboard" replace />;
   }
 
-  // Auto-redirect non-admins away from admin routes
-  if (location.pathname.startsWith('/admin') && !isAdmin) {
-    return <Navigate to="/" replace />;
+  if (location.pathname === '/user-profile' && isVendor) {
+    return <Navigate to="/vendor-dashboard" replace />;
   }
 
+  // Prevent access to wrong dashboard types
+  if (location.pathname.startsWith('/admin') && !isAdmin) {
+    if (isVendor) {
+      return <Navigate to="/vendor-dashboard" replace />;
+    }
+    return <Navigate to="/user-dashboard" replace />;
+  }
+
+  if (location.pathname.startsWith('/vendor') && !isVendor) {
+    if (isAdmin) {
+      return <Navigate to="/admin-dashboard" replace />;
+    }
+    return <Navigate to="/user-dashboard" replace />;
+  }
+
+  if (location.pathname.startsWith('/user') && (isAdmin || isVendor)) {
+    if (isAdmin) {
+      return <Navigate to="/admin-dashboard" replace />;
+    }
+    return <Navigate to="/vendor-dashboard" replace />;
+  }
+
+  // Check specific role requirements
   if (requireSuperAdmin && !isSuperAdmin) {
     return <Navigate to="/" replace />;
   }
 
   if (requireAdmin && !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireVendor && !isVendor) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireUser && !isRegularUser) {
     return <Navigate to="/" replace />;
   }
 

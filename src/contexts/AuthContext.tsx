@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -14,6 +15,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isVendor: boolean;
+  userRoles: string[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -85,6 +88,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const getRoleBasedRedirectPath = (roles: string[]) => {
+    if (roles.includes('admin') || roles.includes('super_admin')) {
+      return '/admin-dashboard';
+    }
+    if (roles.includes('vendor')) {
+      return '/vendor-dashboard';
+    }
+    return '/user-dashboard';
+  };
+
   const signUp = async (email: string, password: string, fullName: string, whatsapp?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
@@ -128,6 +141,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message,
         variant: "destructive",
       });
+    } else {
+      // Wait for roles to be fetched before redirecting
+      setTimeout(async () => {
+        if (user) {
+          const { data } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id);
+          
+          const roles = data?.map(r => r.role) || [];
+          const redirectPath = getRoleBasedRedirectPath(roles);
+          
+          toast({
+            title: "Welcome back!",
+            description: "You have been signed in successfully.",
+          });
+          
+          // Navigate to role-based dashboard
+          window.location.href = redirectPath;
+        }
+      }, 1000);
     }
 
     return { error };
@@ -170,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
   const isSuperAdmin = userRoles.includes('super_admin');
+  const isVendor = userRoles.includes('vendor');
 
   return (
     <AuthContext.Provider value={{
@@ -181,7 +216,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signInWithGoogle,
       signOut,
       isAdmin,
-      isSuperAdmin
+      isSuperAdmin,
+      isVendor,
+      userRoles
     }}>
       {children}
     </AuthContext.Provider>

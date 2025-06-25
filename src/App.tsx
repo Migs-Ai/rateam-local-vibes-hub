@@ -42,18 +42,22 @@ const App = () => (
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/vendor-signup" element={<VendorSignup />} />
             <Route path="/vendor-login" element={<VendorLogin />} />
+            
+            {/* Protected Vendor Routes */}
             <Route 
               path="/vendor-dashboard" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requireVendor>
                   <VendorDashboard />
                 </ProtectedRoute>
               } 
             />
+            
+            {/* Protected User Routes */}
             <Route 
               path="/user-dashboard" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requireUser>
                   <UserDashboard />
                 </ProtectedRoute>
               } 
@@ -74,7 +78,8 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route path="/polls" element={<Polls />} />
+            
+            {/* Protected Admin Routes */}
             <Route 
               path="/admin-dashboard" 
               element={
@@ -91,11 +96,16 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            
+            {/* Public Routes */}
+            <Route path="/polls" element={<Polls />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            
             {/* Legacy routes for backward compatibility */}
             <Route path="/login" element={<Auth />} />
             <Route path="/signup" element={<Auth />} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

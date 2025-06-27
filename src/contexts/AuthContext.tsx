@@ -86,16 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const getRoleBasedRedirectPath = (roles: string[]) => {
-    if (roles.includes('admin')) {
-      return '/admin-dashboard';
-    }
-    if (roles.includes('vendor')) {
-      return '/vendor-dashboard';
-    }
-    return '/user-dashboard';
-  };
-
   const signUp = async (email: string, password: string, fullName: string, whatsapp?: string, metadata?: any) => {
     const redirectUrl = `${window.location.origin}/`;
     
@@ -167,26 +157,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
     } else {
-      // Wait for roles to be fetched before redirecting
-      setTimeout(async () => {
-        if (user) {
-          const { data } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', user.id);
-          
-          const roles = data?.map(r => r.role) || [];
-          const redirectPath = getRoleBasedRedirectPath(roles);
-          
-          toast({
-            title: "Welcome back!",
-            description: "You have been signed in successfully.",
-          });
-          
-          // Navigate to role-based dashboard
-          window.location.href = redirectPath;
-        }
-      }, 1000);
+      toast({
+        title: "Welcome back!",
+        description: "You have been signed in successfully.",
+      });
     }
 
     return { error };

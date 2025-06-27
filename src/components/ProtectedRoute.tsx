@@ -31,40 +31,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" replace />;
   }
 
-  // Role-based redirects to appropriate dashboards
-  const isRegularUser = userRoles.includes('user') && !isAdmin && !isVendor;
-
-  // Auto-redirect users to their appropriate dashboards
-  if (location.pathname === '/user-profile' && isAdmin) {
-    return <Navigate to="/admin-dashboard" replace />;
-  }
-
-  if (location.pathname === '/user-profile' && isVendor) {
-    return <Navigate to="/vendor-dashboard" replace />;
-  }
-
-  // Prevent access to wrong dashboard types
-  if (location.pathname.startsWith('/admin') && !isAdmin) {
-    if (isVendor) {
-      return <Navigate to="/vendor-dashboard" replace />;
-    }
-    return <Navigate to="/user-dashboard" replace />;
-  }
-
-  if (location.pathname.startsWith('/vendor') && !isVendor) {
-    if (isAdmin) {
-      return <Navigate to="/admin-dashboard" replace />;
-    }
-    return <Navigate to="/user-dashboard" replace />;
-  }
-
-  if (location.pathname.startsWith('/user') && (isAdmin || isVendor)) {
-    if (isAdmin) {
-      return <Navigate to="/admin-dashboard" replace />;
-    }
-    return <Navigate to="/vendor-dashboard" replace />;
-  }
-
   // Check specific role requirements
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/" replace />;
@@ -74,7 +40,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  if (requireUser && !isRegularUser) {
+  if (requireUser && !userRoles.includes('user')) {
     return <Navigate to="/" replace />;
   }
 

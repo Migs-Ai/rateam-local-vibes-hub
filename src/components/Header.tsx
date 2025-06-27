@@ -9,7 +9,7 @@ const Header = () => {
 
   const handleAdminClick = () => {
     if (isAdmin) {
-      navigate('/admin');
+      navigate('/admin-dashboard');
     } else {
       navigate('/admin-login');
     }

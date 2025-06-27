@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,10 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Users, Search, TrendingUp, Store, MessageSquare } from "lucide-react";
 import Header from "@/components/Header";
 import QuickReviewForm from "@/components/QuickReviewForm";
-
 const Index = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Header />
       
       {/* Hero Section */}
@@ -152,15 +149,13 @@ const Index = () => {
             </Link>
             
             <Link to="/vendors">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+              <Button size="lg" variant="outline" className="border-white text-green hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
                 Browse Vendors
               </Button>
             </Link>
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;

@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -28,7 +27,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    // Save the attempted location so we can redirect back after login
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
   // Check specific role requirements

@@ -1,83 +1,61 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, MessageSquare, Phone, Mail, AlertTriangle, TrendingUp, Users, Calendar } from "lucide-react";
+import { Star, MessageSquare, Phone, Mail, AlertTriangle, TrendingUp, Users, Calendar, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 
 const VendorDashboard = () => {
   const { toast } = useToast();
+  const { user, vendorProfile, isVendor } = useAuth();
+  const navigate = useNavigate();
   const [filterRating, setFilterRating] = useState("all");
   const [replyText, setReplyText] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock vendor data
-  const vendor = {
-    businessName: "Mama's Kitchen",
-    category: "Food",
-    rating: 4.8,
-    totalReviews: 234,
-    thisMonth: 45,
-    averageThisMonth: 4.9
-  };
-
-  // Mock reviews data
-  const reviews = [
-    {
-      id: "1",
-      userName: "John Doe",
-      rating: 5,
-      comment: "Amazing food! The jollof rice is the best on campus. Quick service and friendly staff.",
-      date: "2024-01-15",
-      avatar: "JD",
-      allowContact: true,
-      replied: false
-    },
-    {
-      id: "2",
-      userName: "Sarah Johnson",
-      rating: 2,
-      comment: "Food was cold when delivered. Service was slow and the order was wrong. Very disappointed.",
-      date: "2024-01-14",
-      avatar: "SJ",
-      allowContact: true,
-      replied: false,
-      contactInfo: {
-        whatsapp: "+234 901 234 5678",
-        email: "sarah.j@email.com"
-      }
-    },
-    {
-      id: "3",
-      userName: "Mike Chen",
-      rating: 4,
-      comment: "Good food overall, reasonable prices. Will order again.",
-      date: "2024-01-12",
-      avatar: "MC",
-      allowContact: false,
-      replied: true,
-      reply: "Thank you for your feedback! We appreciate your business."
-    },
-    {
-      id: "4",
-      userName: "Lisa Brown",
-      rating: 1,
-      comment: "Terrible experience. Food was spoiled and customer service was rude.",
-      date: "2024-01-10",
-      avatar: "LB",
-      allowContact: true,
-      replied: false,
-      contactInfo: {
-        whatsapp: "+234 902 345 6789",
-        phone: "+234 902 345 6789"
-      }
+  useEffect(() => {
+    if (!isVendor || !vendorProfile) {
+      navigate('/');
+      return;
     }
-  ];
+    fetchReviews();
+  }, [isVendor, vendorProfile, navigate]);
+
+  const fetchReviews = async () => {
+    if (!vendorProfile?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles (
+            full_name
+          )
+        `)
+        .eq('vendor_id', vendorProfile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reviews:', error);
+      } else {
+        setReviews(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredReviews = reviews.filter(review => {
     if (filterRating === "all") return true;
@@ -117,15 +95,73 @@ const VendorDashboard = () => {
     ));
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center py-12">
+          <div className="text-lg">Loading vendor dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!vendorProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="mb-4 text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Vendor Profile Not Found</h2>
+            <p className="text-gray-600 mb-6">
+              Your vendor profile is still being set up or approved. Please contact support if this issue persists.
+            </p>
+            <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700">
+              Go to Home
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    : "0.0";
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="mb-4 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Vendor Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {vendor.businessName}!</p>
+          <p className="text-gray-600">Welcome back, {vendorProfile.business_name}!</p>
+          <Badge 
+            variant={vendorProfile.status === 'approved' ? 'default' : 'secondary'}
+            className="mt-2"
+          >
+            Status: {vendorProfile.status}
+          </Badge>
         </div>
 
         {/* Stats Overview */}
@@ -135,7 +171,7 @@ const VendorDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Overall Rating</p>
-                  <p className="text-2xl font-bold">{vendor.rating}</p>
+                  <p className="text-2xl font-bold">{averageRating}</p>
                 </div>
                 <Star className="h-8 w-8 text-yellow-400" />
               </div>
@@ -147,7 +183,7 @@ const VendorDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Reviews</p>
-                  <p className="text-2xl font-bold">{vendor.totalReviews}</p>
+                  <p className="text-2xl font-bold">{reviews.length}</p>
                 </div>
                 <Users className="h-8 w-8 text-blue-400" />
               </div>
@@ -159,7 +195,11 @@ const VendorDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">This Month</p>
-                  <p className="text-2xl font-bold">{vendor.thisMonth}</p>
+                  <p className="text-2xl font-bold">{reviews.filter(r => {
+                    const reviewDate = new Date(r.created_at);
+                    const now = new Date();
+                    return reviewDate.getMonth() === now.getMonth() && reviewDate.getFullYear() === now.getFullYear();
+                  }).length}</p>
                 </div>
                 <Calendar className="h-8 w-8 text-green-400" />
               </div>
@@ -233,15 +273,19 @@ const VendorDashboard = () => {
                 <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
                   <div className="flex items-start space-x-4">
                     <Avatar>
-                      <AvatarFallback>{review.avatar}</AvatarFallback>
+                      <AvatarFallback>
+                        {review.profiles?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <h4 className="font-semibold">{review.userName}</h4>
+                          <h4 className="font-semibold">{review.profiles?.full_name || 'Anonymous'}</h4>
                           <div className="flex items-center space-x-2">
                             <div className="flex">{renderStars(review.rating)}</div>
-                            <span className="text-sm text-gray-500">{review.date}</span>
+                            <span className="text-sm text-gray-500">
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </span>
                             {review.rating < 3 && (
                               <Badge variant="destructive" className="ml-2">
                                 Low Rating
@@ -249,98 +293,53 @@ const VendorDashboard = () => {
                             )}
                           </div>
                         </div>
-                        
-                        {/* Contact options for low ratings */}
-                        {review.rating < 3 && review.allowContact && review.contactInfo && (
-                          <div className="flex space-x-2">
-                            {review.contactInfo.whatsapp && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-green-600 border-green-200"
-                                onClick={() => handleContactCustomer(review.contactInfo, "WhatsApp")}
-                              >
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                WhatsApp
-                              </Button>
-                            )}
-                            {review.contactInfo.phone && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleContactCustomer(review.contactInfo, "Phone")}
-                              >
-                                <Phone className="h-4 w-4 mr-1" />
-                                Call
-                              </Button>
-                            )}
-                            {review.contactInfo.email && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleContactCustomer(review.contactInfo, "Email")}
-                              >
-                                <Mail className="h-4 w-4 mr-1" />
-                                Email
-                              </Button>
-                            )}
-                          </div>
-                        )}
                       </div>
                       
-                      <p className="text-gray-700 mb-3">{review.comment}</p>
-                      
-                      {/* Vendor Reply */}
-                      {review.replied && review.reply && (
-                        <div className="bg-blue-50 p-3 rounded-lg mt-3">
-                          <p className="text-sm font-medium text-blue-800 mb-1">Your Reply:</p>
-                          <p className="text-blue-700">{review.reply}</p>
-                        </div>
+                      {review.comment && (
+                        <p className="text-gray-700 mb-3">{review.comment}</p>
                       )}
                       
                       {/* Reply Form */}
-                      {!review.replied && (
-                        <div className="mt-3">
-                          {replyingTo === review.id ? (
-                            <div className="space-y-3">
-                              <Textarea
-                                value={replyText}
-                                onChange={(e) => setReplyText(e.target.value)}
-                                placeholder="Write your response to this review..."
-                                rows={3}
-                              />
-                              <div className="flex space-x-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleReply(review.id)}
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  Post Reply
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setReplyingTo(null);
-                                    setReplyText("");
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
+                      <div className="mt-3">
+                        {replyingTo === review.id ? (
+                          <div className="space-y-3">
+                            <Textarea
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Write your response to this review..."
+                              rows={3}
+                            />
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleReply(review.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Post Reply
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setReplyingTo(null);
+                                  setReplyText("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
                             </div>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setReplyingTo(review.id)}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              Reply
-                            </Button>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setReplyingTo(review.id)}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            Reply
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

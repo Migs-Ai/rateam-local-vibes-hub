@@ -1,13 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { ArrowLeft } from "lucide-react";
+
 const Header = () => {
   const {
     user,
     isAdmin,
+    isVendor,
+    userType,
     signOut
   } = useAuth();
   const navigate = useNavigate();
+
   const handleAdminClick = () => {
     if (isAdmin) {
       navigate('/admin-dashboard');
@@ -15,11 +20,22 @@ const Header = () => {
       navigate('/admin-login');
     }
   };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
-  return <header className="bg-white shadow-sm border-b">
+
+  const handleDashboardClick = () => {
+    if (isVendor || userType === 'vendor') {
+      navigate('/vendor-dashboard');
+    } else {
+      navigate('/user-dashboard');
+    }
+  };
+
+  return (
+    <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
@@ -28,6 +44,7 @@ const Header = () => {
               <span className="ml-1 text-sm text-gray-500">.com</span>
             </Link>
           </div>
+          
           <nav className="hidden md:flex items-center space-x-6">
             <Link to="/vendors" className="text-gray-600 hover:text-gray-900">
               Browse Vendors
@@ -39,16 +56,24 @@ const Header = () => {
               About
             </Link>
           </nav>
+          
           <div className="flex items-center space-x-4">
-            {user ? <>
-                <Link to="/user-dashboard">
-                  
-                </Link>
-                {isAdmin && <Button variant="ghost" onClick={handleAdminClick}>Admin Dashboard</Button>}
+            {user ? (
+              <>
+                <Button variant="ghost" onClick={handleDashboardClick}>
+                  {isVendor || userType === 'vendor' ? 'Vendor Dashboard' : 'My Dashboard'}
+                </Button>
+                {isAdmin && (
+                  <Button variant="ghost" onClick={handleAdminClick}>
+                    Admin Dashboard
+                  </Button>
+                )}
                 <Button variant="ghost" onClick={handleSignOut}>
                   Sign Out
                 </Button>
-              </> : <>
+              </>
+            ) : (
+              <>
                 <Link to="/auth">
                   <Button variant="ghost">Login</Button>
                 </Link>
@@ -58,10 +83,13 @@ const Header = () => {
                 <Button variant="outline" onClick={handleAdminClick}>
                   Admin
                 </Button>
-              </>}
+              </>
+            )}
           </div>
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default Header;

@@ -42,7 +42,7 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             {user ? <>
                 <Link to="/user-dashboard">
-                  <Button variant="ghost">Dashboard</Button>
+                  
                 </Link>
                 {isAdmin && <Button variant="ghost" onClick={handleAdminClick}>Admin Dashboard</Button>}
                 <Button variant="ghost" onClick={handleSignOut}>

@@ -112,10 +112,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
     } else {
-      // If it's a vendor signup, create vendor profile
+      // If it's a vendor signup, create vendor profile and assign vendor role
       if (metadata?.user_type === 'vendor' && data.user) {
         setTimeout(async () => {
           try {
+            // Create vendor profile
             const { error: vendorError } = await supabase
               .from('vendors')
               .insert({
@@ -126,11 +127,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 phone: metadata.phone,
                 whatsapp: whatsapp,
                 email: email,
+                description: metadata.description,
+                preferred_contact: metadata.preferred_contact,
                 status: 'pending'
               });
 
             if (vendorError) {
               console.error('Error creating vendor profile:', vendorError);
+            }
+
+            // Assign vendor role
+            const { error: roleError } = await supabase
+              .from('user_roles')
+              .insert({
+                user_id: data.user!.id,
+                role: 'vendor'
+              });
+
+            if (roleError) {
+              console.error('Error assigning vendor role:', roleError);
             }
           } catch (err) {
             console.error('Error in vendor profile creation:', err);

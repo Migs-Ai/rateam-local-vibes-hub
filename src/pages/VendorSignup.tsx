@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 
 const VendorSignup = () => {
@@ -19,10 +20,12 @@ const VendorSignup = () => {
   const [email, setEmail] = useState("");
   const [location, setLocation] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [preferredContact, setPreferredContact] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signUp } = useAuth();
 
   const categories = ["Food", "Fashion", "Tech Repair", "Transport", "Barber", "Laundry", "Other"];
   const contactMethods = ["WhatsApp", "SMS", "Email", "Phone Call"];
@@ -31,40 +34,40 @@ const VendorSignup = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock vendor registration - in a real app, this would make an API call
-    setTimeout(() => {
-      if (businessName && category && phone && email && password) {
-        const vendorData = {
-          id: Date.now().toString(),
-          businessName,
-          category,
-          description,
-          phone,
-          whatsapp,
-          email,
-          location,
-          preferredContact,
-          type: 'vendor',
-          status: 'active'
-        };
-        
-        localStorage.setItem('vendor', JSON.stringify(vendorData));
-        
-        toast({
-          title: "Business registered successfully!",
-          description: "Welcome to RateAm.com! You can now manage your vendor profile.",
-        });
-        
-        navigate('/vendor-dashboard');
-      } else {
+    try {
+      // Create user account with vendor metadata
+      const { error } = await signUp(email, password, fullName, whatsapp, {
+        user_type: 'vendor',
+        business_name: businessName,
+        category,
+        location,
+        phone,
+        description,
+        preferred_contact: preferredContact
+      });
+
+      if (error) {
         toast({
           title: "Registration failed",
-          description: "Please fill in all required fields.",
+          description: error.message,
           variant: "destructive",
         });
+      } else {
+        toast({
+          title: "Vendor registration successful!",
+          description: "Please check your email to verify your account. Your vendor profile will be reviewed by our admin team.",
+        });
+        navigate('/auth');
       }
+    } catch (error) {
+      toast({
+        title: "Registration failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -84,6 +87,18 @@ const VendorSignup = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
+                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Your full name"
+                    required
+                  />
+                </div>
+                
+                <div>
                   <Label htmlFor="businessName">Business Name *</Label>
                   <Input
                     id="businessName"
@@ -94,7 +109,9 @@ const VendorSignup = () => {
                     required
                   />
                 </div>
-                
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="category">Category *</Label>
                   <Select value={category} onValueChange={setCategory} required>
@@ -109,6 +126,18 @@ const VendorSignup = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="email">Email Address *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="business@example.com"
+                    required
+                  />
                 </div>
               </div>
               
@@ -161,18 +190,6 @@ const VendorSignup = () => {
               </div>
               
               <div>
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="business@example.com"
-                  required
-                />
-              </div>
-              
-              <div>
                 <Label htmlFor="password">Password *</Label>
                 <Input
                   id="password"
@@ -218,7 +235,7 @@ const VendorSignup = () => {
               </p>
               <p className="text-sm text-gray-600 mt-2">
                 Looking to rate vendors?{" "}
-                <Link to="/signup" className="text-green-600 hover:underline">
+                <Link to="/auth" className="text-green-600 hover:underline">
                   Create User Account
                 </Link>
               </p>

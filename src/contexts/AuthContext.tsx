@@ -204,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAdmin = userRoles.includes('admin');
+  const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
   const isVendor = userRoles.includes('vendor');
 
   console.log('Current user roles:', userRoles);

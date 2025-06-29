@@ -1,12 +1,13 @@
-
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-
 const Header = () => {
-  const { user, isAdmin, signOut } = useAuth();
+  const {
+    user,
+    isAdmin,
+    signOut
+  } = useAuth();
   const navigate = useNavigate();
-
   const handleAdminClick = () => {
     if (isAdmin) {
       navigate('/admin-dashboard');
@@ -14,14 +15,11 @@ const Header = () => {
       navigate('/admin-login');
     }
   };
-
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
-
-  return (
-    <header className="bg-white shadow-sm border-b">
+  return <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
@@ -42,22 +40,15 @@ const Header = () => {
             </Link>
           </nav>
           <div className="flex items-center space-x-4">
-            {user ? (
-              <>
+            {user ? <>
                 <Link to="/user-dashboard">
                   <Button variant="ghost">Dashboard</Button>
                 </Link>
-                {isAdmin && (
-                  <Button variant="ghost" onClick={handleAdminClick}>
-                    Admin
-                  </Button>
-                )}
+                {isAdmin && <Button variant="ghost" onClick={handleAdminClick}>Admin Dashboard</Button>}
                 <Button variant="ghost" onClick={handleSignOut}>
                   Sign Out
                 </Button>
-              </>
-            ) : (
-              <>
+              </> : <>
                 <Link to="/auth">
                   <Button variant="ghost">Login</Button>
                 </Link>
@@ -67,13 +58,10 @@ const Header = () => {
                 <Button variant="outline" onClick={handleAdminClick}>
                   Admin
                 </Button>
-              </>
-            )}
+              </>}
           </div>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default Header;

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRoles = async (userId: string) => {
     try {
+      console.log('Fetching roles for user:', userId);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -80,7 +80,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      setUserRoles(data?.map(r => r.role) || []);
+      console.log('User roles data:', data);
+      const roles = data?.map(r => r.role) || [];
+      console.log('Extracted roles:', roles);
+      setUserRoles(roles);
     } catch (error) {
       console.error('Error fetching user roles:', error);
     }
@@ -203,6 +206,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = userRoles.includes('admin');
   const isVendor = userRoles.includes('vendor');
+
+  console.log('Current user roles:', userRoles);
+  console.log('Is admin:', isAdmin);
+  console.log('Is vendor:', isVendor);
 
   return (
     <AuthContext.Provider value={{

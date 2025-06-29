@@ -276,6 +276,7 @@ export type Database = {
               user_id: string
               check_role: Database["public"]["Enums"]["user_role"]
             }
+          | { user_id: string; check_role: string }
         Returns: boolean
       }
       is_admin: {

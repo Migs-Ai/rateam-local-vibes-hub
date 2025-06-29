@@ -18,7 +18,7 @@ const Auth = () => {
   const [whatsapp, setWhatsapp] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
+  const [businessLocation, setBusinessLocation] = useState("");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
   const [preferredContact, setPreferredContact] = useState("");
@@ -56,7 +56,7 @@ const Auth = () => {
           user_type: 'vendor',
           business_name: businessName,
           category,
-          location,
+          location: businessLocation,
           phone,
           description,
           preferred_contact: preferredContact
@@ -310,12 +310,12 @@ const Auth = () => {
                       </div>
 
                       <div>
-                        <Label htmlFor="location">Location</Label>
+                        <Label htmlFor="businessLocation">Location</Label>
                         <Input
-                          id="location"
+                          id="businessLocation"
                           type="text"
-                          value={location}
-                          onChange={(e) => setLocation(e.target.value)}
+                          value={businessLocation}
+                          onChange={(e) => setBusinessLocation(e.target.value)}
                           placeholder="Near Main Gate, Federal University"
                           required
                         />

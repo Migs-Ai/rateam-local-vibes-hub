@@ -25,7 +25,7 @@ const UserProfile = () => {
   // Redirect admins to admin dashboard
   useEffect(() => {
     if (!loading && isAdmin) {
-      navigate('/admin', { replace: true });
+      navigate('/admin-dashboard', { replace: true });
       return;
     }
   }, [isAdmin, loading, navigate]);

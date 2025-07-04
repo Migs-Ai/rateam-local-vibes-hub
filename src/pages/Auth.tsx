@@ -71,8 +71,8 @@ const Auth = () => {
           // Success message is handled in context
         }
       } else {
-        const { error, data } = await signIn(email, password);
-        if (!error && data?.user) {
+        const { error } = await signIn(email, password);
+        if (!error) {
           // Navigation will be handled by useEffect after auth state updates
         }
       }

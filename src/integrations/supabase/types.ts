@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string | null
+          id: string
+          record_id: string | null
+          table_name: string
+          timestamp: string | null
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          id?: string
+          record_id?: string | null
+          table_name: string
+          timestamp?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          id?: string
+          record_id?: string | null
+          table_name?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string

@@ -20,7 +20,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (user && isAdmin) {
-      navigate('/admin');
+      navigate('/admin-dashboard');
     } else if (user && !isAdmin) {
       navigate('/');
     }

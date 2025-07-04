@@ -96,6 +96,14 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/admin-panel" 
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminPanel />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Public Routes */}
             <Route path="/polls" element={<Polls />} />

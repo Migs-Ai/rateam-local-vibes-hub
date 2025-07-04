@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -188,9 +189,9 @@ const QuickReviewForm = () => {
         
         {!user && (
           <p className="text-sm text-gray-500 text-center mt-4">
-            <a href="/auth" className="text-green-600 hover:underline">
+            <Link to="/auth" className="text-green-600 hover:underline">
               Sign in
-            </a> to leave a review
+            </Link> to leave a review
           </p>
         )}
       </CardContent>

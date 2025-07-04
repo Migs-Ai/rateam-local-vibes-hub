@@ -19,31 +19,9 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock login - in a real app, this would make an API call
-    setTimeout(() => {
-      if (email && password) {
-        localStorage.setItem('user', JSON.stringify({
-          id: '1',
-          name: 'John Doe',
-          email: email,
-          type: 'user'
-        }));
-        
-        toast({
-          title: "Login successful!",
-          description: "Welcome back to RateAm.com",
-        });
-        
-        navigate('/user-dashboard');
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Please check your credentials and try again.",
-          variant: "destructive",
-        });
-      }
-      setIsLoading(false);
-    }, 1000);
+    // Redirect to the main auth page for proper authentication
+    navigate('/auth');
+    setIsLoading(false);
   };
 
   return (

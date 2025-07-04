@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, Calendar, MessageSquare, Edit, Trash2, Eye } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,17 +31,28 @@ interface Review {
 }
 
 const UserDashboard = () => {
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // Redirect admins to admin dashboard
+  useEffect(() => {
+    if (!authLoading && isAdmin) {
+      navigate('/admin-dashboard', { replace: true });
+      return;
+    }
+  }, [isAdmin, authLoading, navigate]);
 
   useEffect(() => {
     if (user) {
       fetchUserData();
+    } else if (!authLoading) {
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchUserData = async () => {
     try {
@@ -140,12 +151,29 @@ const UserDashboard = () => {
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : "0.0";
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="flex items-center justify-center py-12">
           <div className="text-lg">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
+            <p className="text-gray-600 mb-6">You need to be logged in to access your dashboard.</p>
+            <Link to="/auth">
+              <Button className="bg-green-600 hover:bg-green-700">Go to Login</Button>
+            </Link>
+          </div>
         </div>
       </div>
     );

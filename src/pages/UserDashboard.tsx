@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,36 +37,56 @@ const UserDashboard = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Redirect admins to admin dashboard
+  console.log('UserDashboard - Auth state:', { user: !!user, isAdmin, authLoading });
+
   useEffect(() => {
-    if (!authLoading && isAdmin) {
+    // Only redirect admins if we're sure about the auth state
+    if (!authLoading && user && isAdmin) {
+      console.log('Redirecting admin to admin dashboard');
       navigate('/admin-dashboard', { replace: true });
       return;
     }
-  }, [isAdmin, authLoading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      fetchUserData();
-    } else if (!authLoading) {
+    // If not loading and no user, we should have been redirected by ProtectedRoute
+    // but if we're here, let's handle it gracefully
+    if (!authLoading && !user) {
+      console.log('No user found, should redirect to auth');
       setLoading(false);
+      return;
     }
-  }, [user, authLoading]);
+
+    // If we have a user and they're not an admin, fetch their data
+    if (!authLoading && user && !isAdmin) {
+      console.log('Fetching user data for:', user.id);
+      fetchUserData();
+    }
+  }, [user, isAdmin, authLoading, navigate]);
 
   const fetchUserData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
+      setError(null);
+      console.log('Starting to fetch user data...');
+
       // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
+        setError('Failed to load profile data');
       } else {
+        console.log('Profile data fetched:', profileData);
         setProfile(profileData);
       }
 
@@ -83,12 +104,14 @@ const UserDashboard = () => {
             category
           )
         `)
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (reviewsError) {
         console.error('Error fetching reviews:', reviewsError);
+        // Don't set error for reviews, just log it
       } else {
+        console.log('Reviews data fetched:', reviewsData);
         // Transform the data to match our Review interface
         const transformedReviews = (reviewsData || []).map(review => ({
           ...review,
@@ -97,7 +120,8 @@ const UserDashboard = () => {
         setReviews(transformedReviews);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error in fetchUserData:', error);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -151,17 +175,37 @@ const UserDashboard = () => {
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : "0.0";
 
+  // Show loading state
   if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="flex items-center justify-center py-12">
-          <div className="text-lg">Loading...</div>
+          <div className="text-lg">Loading your dashboard...</div>
         </div>
       </div>
     );
   }
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Refresh Page
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if no user
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -199,7 +243,7 @@ const UserDashboard = () => {
                   <h1 className="text-2xl font-bold text-gray-900">
                     {profile?.full_name || 'User'}
                   </h1>
-                  <p className="text-gray-600">{profile?.email}</p>
+                  <p className="text-gray-600">{profile?.email || user.email}</p>
                   <p className="text-sm text-gray-500">
                     Member since {new Date(profile?.created_at || '').toLocaleDateString()}
                   </p>

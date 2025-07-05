@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Calendar, MessageSquare, Edit, Trash2, Eye } from "lucide-react";
+import { Star, Calendar, MessageSquare, Edit, Trash2, Eye, TrendingUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,27 +40,18 @@ const UserDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  console.log('UserDashboard - Auth state:', { user: !!user, isAdmin, authLoading });
-
   useEffect(() => {
-    // Only redirect admins if we're sure about the auth state
     if (!authLoading && user && isAdmin) {
-      console.log('Redirecting admin to admin dashboard');
       navigate('/admin-dashboard', { replace: true });
       return;
     }
 
-    // If not loading and no user, we should have been redirected by ProtectedRoute
-    // but if we're here, let's handle it gracefully
     if (!authLoading && !user) {
-      console.log('No user found, should redirect to auth');
       setLoading(false);
       return;
     }
 
-    // If we have a user and they're not an admin, fetch their data
     if (!authLoading && user && !isAdmin) {
-      console.log('Fetching user data for:', user.id);
       fetchUserData();
     }
   }, [user, isAdmin, authLoading, navigate]);
@@ -73,7 +64,6 @@ const UserDashboard = () => {
 
     try {
       setError(null);
-      console.log('Starting to fetch user data...');
 
       // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
@@ -84,9 +74,13 @@ const UserDashboard = () => {
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
-        setError('Failed to load profile data');
+        // Create a basic profile if none exists
+        setProfile({
+          full_name: user.email?.split('@')[0] || 'User',
+          email: user.email || '',
+          created_at: new Date().toISOString()
+        });
       } else {
-        console.log('Profile data fetched:', profileData);
         setProfile(profileData);
       }
 
@@ -109,10 +103,7 @@ const UserDashboard = () => {
 
       if (reviewsError) {
         console.error('Error fetching reviews:', reviewsError);
-        // Don't set error for reviews, just log it
       } else {
-        console.log('Reviews data fetched:', reviewsData);
-        // Transform the data to match our Review interface
         const transformedReviews = (reviewsData || []).map(review => ({
           ...review,
           vendor: review.vendors
@@ -121,7 +112,7 @@ const UserDashboard = () => {
       }
     } catch (error) {
       console.error('Error in fetchUserData:', error);
-      setError('An unexpected error occurred');
+      setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -145,7 +136,7 @@ const UserDashboard = () => {
           title: "Review deleted",
           description: `Your review for ${vendorName} has been deleted.`,
         });
-        fetchUserData(); // Refresh the data
+        fetchUserData();
       }
     } catch (error) {
       toast({
@@ -165,17 +156,10 @@ const UserDashboard = () => {
     ));
   };
 
-  const getRatingColor = (rating: number) => {
-    if (rating >= 4) return "text-green-600";
-    if (rating >= 3) return "text-yellow-600";
-    return "text-red-600";
-  };
-
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : "0.0";
 
-  // Show loading state
   if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -187,7 +171,6 @@ const UserDashboard = () => {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -205,7 +188,6 @@ const UserDashboard = () => {
     );
   }
 
-  // Show login prompt if no user
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -228,61 +210,54 @@ const UserDashboard = () => {
       <Header />
       
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* User Profile Header */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center space-x-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={profile?.avatar_url} />
-                  <AvatarFallback className="text-xl">
-                    {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {profile?.full_name || 'User'}
-                  </h1>
-                  <p className="text-gray-600">{profile?.email || user.email}</p>
-                  <p className="text-sm text-gray-500">
-                    Member since {new Date(profile?.created_at || '').toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 sm:mt-0">
-                <Link to="/user-profile">
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    Edit Profile
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardHeader>
+        {/* Welcome Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome back, {profile?.full_name || 'User'}!
+          </h1>
+          <p className="text-gray-600">Manage your reviews and discover new local vendors</p>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">{reviews.length}</div>
+              <div className="text-sm text-gray-600">Total Reviews</div>
+            </CardContent>
+          </Card>
           
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{reviews.length}</div>
-                <div className="text-sm text-gray-600">Total Reviews</div>
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-yellow-600 mb-2">{averageRating}</div>
+              <div className="text-sm text-gray-600">Average Rating Given</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                {profile?.created_at ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0}
               </div>
-              <div className="text-center">
-                <div className={`text-2xl font-bold ${getRatingColor(parseFloat(averageRating))}`}>
-                  {averageRating}
-                </div>
-                <div className="text-sm text-gray-600">Average Rating Given</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">Active</div>
-                <div className="text-sm text-gray-600">Account Status</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="text-sm text-gray-600">Days Active</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">Active</div>
+              <div className="text-sm text-gray-600">Account Status</div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Quick Actions */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Quick Actions
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -308,13 +283,46 @@ const UserDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* User Reviews */}
+        {/* User Profile Summary */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Profile Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={profile?.avatar_url} />
+                <AvatarFallback className="text-xl bg-green-100 text-green-600">
+                  {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {profile?.full_name || 'User'}
+                </h3>
+                <p className="text-gray-600">{profile?.email || user.email}</p>
+                <p className="text-sm text-gray-500">
+                  Member since {new Date(profile?.created_at || '').toLocaleDateString()}
+                </p>
+              </div>
+              <Link to="/user-profile">
+                <Button variant="outline">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Reviews */}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>My Reviews ({reviews.length})</CardTitle>
               <Link to="/vendors">
                 <Button className="bg-green-600 hover:bg-green-700">
+                  <MessageSquare className="mr-2 h-4 w-4" />
                   Write Review
                 </Button>
               </Link>
@@ -324,13 +332,13 @@ const UserDashboard = () => {
           <CardContent>
             <div className="space-y-6">
               {reviews.map((review) => (
-                <div key={review.id} className="border border-gray-200 rounded-lg p-6">
+                <div key={review.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
+                    <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <Link 
                           to={`/vendor/${review.vendor.id}`}
-                          className="text-lg font-semibold text-green-600 hover:text-green-700"
+                          className="text-lg font-semibold text-green-600 hover:text-green-700 transition-colors"
                         >
                           {review.vendor.business_name}
                         </Link>
@@ -339,8 +347,8 @@ const UserDashboard = () => {
                       
                       <div className="flex items-center space-x-2 mb-3">
                         <div className="flex">{renderStars(review.rating)}</div>
-                        <span className="font-semibold">{review.rating}.0</span>
-                        <span className="text-gray-500">•</span>
+                        <span className="font-semibold text-gray-900">{review.rating}.0</span>
+                        <span className="text-gray-400">•</span>
                         <span className="text-sm text-gray-500">
                           {new Date(review.created_at).toLocaleDateString()}
                         </span>
@@ -349,18 +357,19 @@ const UserDashboard = () => {
                     
                     <div className="flex space-x-2">
                       <Link to={`/vendor/${review.vendor.id}`}>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" title="View Vendor">
                           <Eye className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <Button size="sm" variant="outline" className="text-blue-600">
+                      <Button size="sm" variant="outline" className="text-blue-600" title="Edit Review">
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        className="text-red-600"
+                        className="text-red-600 hover:bg-red-50"
                         onClick={() => handleDeleteReview(review.id, review.vendor.business_name)}
+                        title="Delete Review"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -368,7 +377,9 @@ const UserDashboard = () => {
                   </div>
                   
                   {review.comment && (
-                    <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                    <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-md">
+                      "{review.comment}"
+                    </p>
                   )}
                 </div>
               ))}
@@ -381,6 +392,7 @@ const UserDashboard = () => {
                 <p className="text-gray-600 mb-6">Start sharing your experiences with local vendors!</p>
                 <Link to="/vendors">
                   <Button className="bg-green-600 hover:bg-green-700">
+                    <MessageSquare className="mr-2 h-4 w-4" />
                     Write Your First Review
                   </Button>
                 </Link>
